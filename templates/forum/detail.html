@@ -55,6 +55,24 @@
                     maxlength="2000"
                     required></textarea>
 
+          <!-- Moderación en vivo -->
+          <div id="modBox" class="alert d-none mt-3" role="alert">
+            <div class="d-flex align-items-center gap-2">
+              <span id="modLabel" class="badge text-uppercase"></span>
+              <span id="modScore" class="small"></span>
+            </div>
+            <div id="modMsg" class="mt-1 small"></div>
+
+            <div id="modSuggestionWrap" class="mt-2 d-none">
+              <div class="small text-muted mb-1">Sugerencia de tono más positivo:</div>
+              <div id="modSuggestion" class="p-2 border rounded bg-light"></div>
+              <button id="useSuggestion" type="button" class="btn btn-soft btn-sm mt-2">
+                Usar sugerencia
+              </button>
+            </div>
+          </div>
+
+
           <div class="form-text d-flex justify-content-between mt-1">
             <span>Se amable y claro. Puedes editar luego.</span>
             <span id="charCounter">0 / 2000</span>
@@ -92,13 +110,23 @@
 
 <script>
 (() => {
-  const ta        = document.getElementById('content');
-  const counter   = document.getElementById('charCounter');
-  const form      = document.getElementById('postForm');
-  const publishBtn= document.getElementById('publishBtn');
-  const clearBtn  = document.getElementById('clearBtn');
-  const alertArea = document.getElementById('alertArea');
-  const myPostsEl = document.getElementById('myPosts');
+  const ta          = document.getElementById('content');
+  const counter     = document.getElementById('charCounter');
+  const form        = document.getElementById('postForm');
+  const publishBtn  = document.getElementById('publishBtn');
+  const clearBtn    = document.getElementById('clearBtn');
+  const alertArea   = document.getElementById('alertArea');
+  const myPostsEl   = document.getElementById('myPosts');
+
+  // Moderación en vivo (UI)
+  const modBox        = document.getElementById('modBox');
+  const modLabel      = document.getElementById('modLabel');
+  const modScore      = document.getElementById('modScore');
+  const modMsg        = document.getElementById('modMsg');
+  const modSugWrap    = document.getElementById('modSuggestionWrap');
+  const modSuggestion = document.getElementById('modSuggestion');
+  const useSuggestion = document.getElementById('useSuggestion');
+
   const MAX = 2000;
 
   function showAlert(type, msg){
@@ -113,23 +141,115 @@
     counter.textContent = `${len} / ${MAX}`;
   }
 
-  // Auto-grow del textarea
+  // Auto-grow básico del textarea
   function autoGrow(el){
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 360) + 'px';
   }
 
-  ta.addEventListener('input', () => { updateCounter(); autoGrow(ta); });
-  window.addEventListener('load', () => { updateCounter(); autoGrow(ta); });
+  // Debounce helper
+  function debounce(fn, ms=400){
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
+
+  // ----- MODERACIÓN EN VIVO -----
+  let lastModeration = null;
+
+  async function moderatePreview(text){
+    if(!text.trim()){
+      modBox.classList.add('d-none');
+      ta.classList.remove('is-valid','is-invalid');
+      publishBtn.disabled = false;
+      return;
+    }
+    try{
+      const res = await fetch('/api/moderate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({content: text})
+      });
+      const data = await res.json();
+
+      lastModeration = data; // guarda último resultado
+
+      // Mapear a estilos
+      const map = {
+        positive: {badge:'bg-success', box:'alert-success', msg:'¡Buen tono! Gracias por mantenerlo positivo.'},
+        neutral:  {badge:'bg-secondary', box:'alert-secondary', msg:'El mensaje es neutro. Puedes añadir detalles constructivos si quieres.'},
+        negative: {badge:'bg-danger', box:'alert-danger', msg:'El tono parece negativo. Ajusta el mensaje para publicarlo.'}
+      };
+
+      const m = map[data.label] || map.neutral;
+
+      // Pintar UI
+      modBox.className = `alert ${m.box} mt-3`;
+      modBox.classList.remove('d-none');
+      modLabel.className = `badge ${m.badge} text-uppercase`;
+      modLabel.textContent = data.label;
+      modScore.textContent = `score: ${data.score}`;
+      modMsg.textContent = m.msg;
+
+      // Resaltar textarea
+      ta.classList.remove('is-valid','is-invalid');
+      if (data.label === 'negative') ta.classList.add('is-invalid');
+      else if (data.label === 'positive') ta.classList.add('is-valid');
+
+      // Sugerencia si es negativa
+      if (data.label === 'negative' && data.suggestion){
+        modSugWrap.classList.remove('d-none');
+        modSuggestion.textContent = data.suggestion;
+      }else{
+        modSugWrap.classList.add('d-none');
+        modSuggestion.textContent = '';
+      }
+
+      // Bloquear publicar si es negativo
+      publishBtn.disabled = (data.label === 'negative');
+    }catch(e){
+      // En caso de fallo de red, no bloqueamos publicar
+      modBox.classList.add('d-none');
+      publishBtn.disabled = false;
+      ta.classList.remove('is-valid','is-invalid');
+    }
+  }
+
+  const debouncedModerate = debounce(() => moderatePreview(ta.value), 420);
+
+  // Eventos
+  ta.addEventListener('input', () => {
+    updateCounter(); autoGrow(ta);
+    debouncedModerate();
+  });
+
+  window.addEventListener('load', () => {
+    updateCounter(); autoGrow(ta);
+    moderatePreview(ta.value);
+  });
 
   clearBtn.addEventListener('click', () => {
     ta.value = '';
     hideAlert();
     updateCounter();
     autoGrow(ta);
+    modBox.classList.add('d-none');
+    publishBtn.disabled = false;
+    ta.classList.remove('is-valid','is-invalid');
     ta.focus();
   });
 
+  // Usar sugerencia del moderador
+  if (useSuggestion){
+    useSuggestion.addEventListener('click', () => {
+      if (lastModeration && lastModeration.suggestion){
+        ta.value = lastModeration.suggestion;
+        updateCounter(); autoGrow(ta);
+        moderatePreview(ta.value);
+        ta.focus();
+      }
+    });
+  }
+
+  // ----- Envío (respeta tu backend que vuelve 201 o 4xx) -----
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideAlert();
@@ -141,37 +261,62 @@
     }
     ta.classList.remove('is-invalid');
 
-    // evita doble submit
     publishBtn.disabled = true;
-    const prevHTML = publishBtn.innerHTML;
+    const oldHTML = publishBtn.innerHTML;
     publishBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Publicando…';
 
     try{
-      const r = await fetch('{{ url_for("forum.create_post") }}', {
+      const r = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: value })
       });
-      if(!r.ok){
+
+      if(r.status === 422 || r.status === 400){
         const data = await r.json().catch(()=>({}));
-        throw new Error(data.error || 'No se pudo publicar.');
+        // Mostrar análisis y sugerencia si llegó desde backend
+        if (data.analysis){
+          lastModeration = data.analysis;
+          modBox.classList.remove('d-none');
+          modLabel.className = 'badge bg-danger text-uppercase';
+          modLabel.textContent = 'negative';
+          modScore.textContent = `score: ${data.analysis.score}`;
+          modMsg.textContent = 'El mensaje no puede publicarse con tono negativo.';
+          if (data.analysis.suggestion){
+            modSugWrap.classList.remove('d-none');
+            modSuggestion.textContent = data.analysis.suggestion;
+          }
+        }
+        throw new Error(data.reason || 'No se pudo publicar.');
       }
+
+      if(!r.ok) throw new Error('No se pudo publicar.');
+
       showAlert('success', '¡Publicación creada con éxito!');
       ta.value = '';
-      updateCounter();
-      autoGrow(ta);
+      updateCounter(); autoGrow(ta);
+      modBox.classList.add('d-none');
+      ta.classList.remove('is-valid','is-invalid');
+      publishBtn.disabled = false;
+
+      // recargar últimas publicaciones
       loadMyPosts();
     }catch(err){
       showAlert('danger', err.message || 'Error publicando.');
     }finally{
-      publishBtn.disabled = false;
-      publishBtn.innerHTML = prevHTML;
+      publishBtn.innerHTML = oldHTML;
+      // Si la moderación lo marcó como negativo, mantenemos disabled;
+      // si no hay moderación negativa, habilitamos
+      if (!(lastModeration && lastModeration.label === 'negative')){
+        publishBtn.disabled = false;
+      }
     }
   });
 
+  // ----- Cargar últimas publicaciones del usuario -----
   async function loadMyPosts(){
     try{
-      const res = await fetch('{{ url_for("forum.list_posts") }}'); // GET /api/posts
+      const res = await fetch('/api/posts');
       const items = await res.json();
       const my = (items || []).filter(p => p.editable).slice(0,5);
 
@@ -179,19 +324,20 @@
         myPostsEl.innerHTML = '<div class="muted">Aún no tienes publicaciones.</div>';
         return;
       }
-      const esc = (s='') => s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
       myPostsEl.innerHTML = my.map(p => `
         <div class="post-card mb-2">
           <div class="d-flex justify-content-between">
             <div>
-              <strong>${esc(p.author || 'Tú')}</strong>
+              <strong>${p.author || 'Tú'}</strong>
               <span class="post-meta"> · ${new Date(p.created_at).toLocaleString()}</span>
             </div>
             <div class="post-actions">
-              <a class="text-decoration-none" href="{{ url_for('forum_pages.index') }}"><i class="bi bi-chat-left-text me-1"></i>ver</a>
+              <a class="text-decoration-none" href="{{ url_for('auth.dashboard') }}">
+                <i class="bi bi-chat-left-text me-1"></i>ver
+              </a>
             </div>
           </div>
-          <div class="mt-1 post-content">${esc(p.content)}</div>
+          <div class="mt-1 post-content">${(p.content || '').replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</div>
         </div>
       `).join('');
     }catch(e){

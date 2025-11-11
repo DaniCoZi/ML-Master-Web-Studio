@@ -48,7 +48,7 @@ def create_post():
             "allowed": False,
             "reason": "El mensaje no cumple el tono positivo/constructivo.",
             "analysis": mod
-        }), 400
+        }), 422
 
     post = Post(user_id=current_user.id, content=content)
     db.session.add(post)
@@ -70,7 +70,7 @@ def update_post(post_id):
 
     mod = analyze_text(content)
     if mod["label"] != "positive":
-        return jsonify({"allowed": False, "analysis": mod}), 400
+        return jsonify({"allowed": False, "analysis": mod}), 422
 
     post.content = content
     db.session.commit()

@@ -1,84 +1,127 @@
 # app/services/moderation.py
 from __future__ import annotations
-import threading
-from typing import Dict, Any
+import re
 
-_analyzers_lock = threading.Lock()
-ANALYZERS: Dict[str, Any] = {"sentiment": None, "toxicity": None, "hate": None}
+# --- Léxicos básicos en ES (puedes ampliarlos fácilmente) ---
+POSITIVE = {
+    "bueno","genial","excelente","maravilloso","estupendo","fantástico",
+    "increíble","positivo","feliz","me_encanta","me_gusta","agradable",
+    "recomiendo","recomendado","útil","bien","gracias","perfecto","satisfecho",
+    "contento","amable","rápido","fácil","bonito","hermoso","mejor","funciona",
+    "solucionado","mejoró","mejorado","eficiente","claridad","aporta","aprendí",
+}
 
-def _load_analyzers():
-    """Carga perezosa los analizadores de pysentimiento (ES)."""
-    with _analyzers_lock:
-        if ANALYZERS["sentiment"] is None:
-            from pysentimiento import create_analyzer
-            ANALYZERS["sentiment"] = create_analyzer(task="sentiment",   lang="es")
-            ANALYZERS["toxicity"]  = create_analyzer(task="toxicity",    lang="es")
-            ANALYZERS["hate"]      = create_analyzer(task="hate_speech", lang="es")
+NEGATIVE = {
+    "malo","terrible","horrible","pésimo","fatal","desastroso","decepcionante",
+    "odio","asco","asqueroso","lento","difícil","complicado","tarde","mal","nada_bien",
+    "nunca","jamás","peor","engorroso","molesto","triste","frustrante","defectuoso",
+    "no_funciona","inútil","estafa","engaño","basura","fallo","error","errores",
+    "pérdida","pobre","malísimo","pésima","vergüenza","pésimas","inaceptable",
+}
+
+NEGATORS = {"no","nunca","jamás"}
+BOOSTERS = {"muy","super","re","extra","bastante"}
+
+TOKEN_RE = re.compile(r"[a-záéíóúüñ]+", re.IGNORECASE)
+
+def _normalize(text: str) -> list[str]:
+    t = text.lower().strip()
+    t = t.replace("me encanta", "me_encanta")
+    t = t.replace("me gusta", "me_gusta")
+    t = t.replace("no funciona", "no_funciona")
+    t = t.replace("nada bien", "nada_bien")
+    return TOKEN_RE.findall(t)
+
+def _score_sentiment(tokens: list[str]) -> tuple[float, list[str]]:
+    score = 0.0
+    negate = False
+    boost = 1.0
+    reasons: list[str] = []
+
+    for w in tokens:
+        if w in NEGATORS:
+            negate = True
+            continue
+        if w in BOOSTERS:
+            boost = 1.5
+            continue
+
+        val = 0.0
+        if w in POSITIVE:
+            val = 1.0
+        elif w in NEGATIVE:
+            val = -1.0
+
+        if val:
+            if negate:
+                val = -val
+                reasons.append(f"negación→{w}")
+                negate = False
+            else:
+                reasons.append(w)
+
+            val *= boost
+            boost = 1.0
+            score += val
+
+    # Normalización suave por longitud
+    norm = max(1.0, len(tokens) / 12.0)
+    s = max(-1.0, min(1.0, score / norm))
+
+    if s >= 0.15:
+        label = "positive"
+    elif s <= -0.15:
+        label = "negative"
+    else:
+        label = "neutral"
+
+    return round(s, 3), reasons
+
+def _polite_rewrite(text: str) -> str:
+    """Sugerencia de reescritura más positiva/constructiva."""
+    t = text.strip()
+    swaps = [
+        (r"\b(odio|asco|asqueros[oa])\b", "no me agrada"),
+        (r"\b(horrible|terrible|pésim[oa]|fatal|desastroso)\b", "podría mejorar"),
+        (r"\b(lento|difícil|complicado)\b", "podría ser más ágil"),
+        (r"\b(basura|estafa|engaño)\b", "no cumple mis expectativas"),
+        (r"\b(no funciona|fall[ao]s?|errores?)\b", "presenta fallas"),
+        (r"\b(mal|peor)\b", "me gustaría que fuera mejor"),
+    ]
+    for pat, rep in swaps:
+        t = re.sub(pat, rep, t, flags=re.IGNORECASE)
+
+    if not re.search(r"(gracias|por favor|¿podrían|sería genial|recomendaría)", t, re.IGNORECASE):
+        t += " ¿Podrían revisarlo? ¡Gracias!"
+    t = t[0].upper() + t[1:] if t else t
+    if t and t[-1] not in ".!?¡¿":
+        t += "."
+    return t
 
 def analyze_text(text: str) -> dict:
+    """Devuelve:
+       {
+         "label": "positive|neutral|negative",
+         "score": float(-1..1),
+         "reasons": [...],
+         "suggestion": str|None,
+         "length": int
+       }
     """
-    Devuelve {
-      label: 'positive'|'negative',
-      score: float [-1..1],
-      sentiment: {...}, toxicity: 'TOXIC'|'NOT_TOXIC', hate: 'HATE'|'NOT_HATE',
-      reasons: [str], suggestions: [str]
+    text = (text or "").strip()
+    if not text:
+        return {"label": "neutral", "score": 0.0, "reasons": [], "suggestion": None, "length": 0}
+
+    toks = _normalize(text)
+    score, reasons = _score_sentiment(toks)
+
+    label = "positive" if score >= 0.15 else ("negative" if score <= -0.15 else "neutral")
+    suggestion = _polite_rewrite(text) if label == "negative" else None
+
+    return {
+        "label": label,
+        "score": score,
+        "reasons": reasons[:12],
+        "suggestion": suggestion,
+        "length": len(toks),
     }
-    """
-    t = (text or "").strip()
-    if not t:
-        return {
-            "label":"negative", "score":-1.0,
-            "reasons":["Mensaje vacío"],
-            "suggestions":["Escribe un mensaje con contexto y una propuesta concreta."]
-        }
-
-    try:
-        _load_analyzers()
-        sa   = ANALYZERS["sentiment"].predict(t)  # .output: POS/NEG/NEU ; .probas: dict
-        tox  = ANALYZERS["toxicity"].predict(t)   # .output: TOXIC/NOT_TOXIC
-        hate = ANALYZERS["hate"].predict(t)       # .output: HATE/NOT_HATE
-
-        base = sa.probas.get("POS", 0) - sa.probas.get("NEG", 0)  # aprox [-1..1]
-
-        penalty = 0.0
-        reasons = []
-        if tox.output == "TOXIC":
-            penalty -= 0.6
-            reasons.append("Se detectó toxicidad.")
-        if hate.output == "HATE":
-            penalty -= 0.8
-            reasons.append("Se detectó discurso de odio.")
-
-        score = max(-1.0, min(1.0, base + penalty))
-        positive = (score >= 0.15) and tox.output != "TOXIC" and hate.output != "HATE"
-
-        if sa.output == "NEG":
-            reasons.append("Sentimiento negativo predominante.")
-        elif sa.output == "NEU" and not reasons:
-            reasons.append("Tono neutral.")
-
-        suggestions = []
-        if not positive:
-            if tox.output == "TOXIC" or hate.output == "HATE":
-                suggestions.append("Evita lenguaje ofensivo o ataques personales; describe el problema sin descalificar.")
-            if sa.output == "NEG":
-                suggestions.append("Cambia adjetivos negativos por descripciones objetivas y propone una solución.")
-            suggestions.append("Estructura en positivo: “Observé ___; propongo ___ porque ___”.")
-            suggestions.append("Agradece el esfuerzo si aplica y enfoca en el objetivo: “Gracias por ___; ¿podemos ajustar ___ para mejorar ___?”")
-
-        return {
-            "label": "positive" if positive else "negative",
-            "score": float(score),
-            "sentiment": {"label": sa.output, "probas": sa.probas},
-            "toxicity": tox.output,
-            "hate": hate.output,
-            "reasons": reasons,
-            "suggestions": suggestions,
-        }
-    except Exception as e:
-        # Fallback seguro si el modelo no carga
-        return {
-            "label":"negative", "score":-1.0,
-            "reasons":[f"Moderador no disponible: {e}"],
-            "suggestions":["Temporalmente no se puede moderar. Intenta con un tono constructivo y vuelve a enviar."]
-        }
