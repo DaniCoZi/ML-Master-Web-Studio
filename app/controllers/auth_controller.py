@@ -1,7 +1,6 @@
 # app/controllers/auth_controller.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_user, login_required, logout_user, current_user
-from sqlalchemy.exc import IntegrityError
 from urllib.parse import urlparse, urljoin
 
 from app import db
@@ -48,16 +47,12 @@ def login_page():
 # -------------------------
 # Dashboard (ahora foro principal)
 # -------------------------
-@auth_bp.route('/dashboard')
+@auth_bp.route("/dashboard")
 @login_required
 def dashboard():
-    """Portada principal del foro."""
-    try:
-        return render_template('forum/forums.html')  # 👈 Usa tu nueva plantilla
-    except Exception as e:
-        from flask import current_app
-        current_app.logger.exception("Error renderizando forums.html")
-        return f"<pre>Dashboard ERROR:\n{e}</pre>", 500
+    from flask import redirect, url_for
+    return redirect(url_for("forum_pages.index"))
+
 
 # -------------------------
 # Vista de publicaciones (listado)

@@ -1,10 +1,10 @@
 {% include 'forum/_forum_header.html' %}
 
 <div class="container">
-  <!-- TABS / breadcrumbs para mantener coherencia -->
+  <!-- Migas -->
   <div class="forum-breadcrumb mb-3">
     <a href="{{ url_for('main.index') }}">Inicio</a> /
-    <a href="{{ url_for('auth.dashboard') }}">Comunidad</a> /
+    <a href="{{ url_for('forum_pages.index') }}">Comunidad</a> /
     <span>Nueva publicación</span>
   </div>
 
@@ -12,7 +12,7 @@
   <div class="topic-container">
     <div class="subforum-title d-flex align-items-center justify-content-between">
       <h3 class="m-0">Crear nueva publicación</h3>
-      <a class="btn btn-soft" href="{{ url_for('auth.dashboard') }}">
+      <a class="btn btn-soft" href="{{ url_for('forum_pages.index') }}">
         <i class="bi bi-arrow-left"></i> Volver
       </a>
     </div>
@@ -26,7 +26,6 @@
         <div class="mb-3">
           <label for="content" class="form-label fw-semibold">Contenido</label>
 
-          <!-- textarea con aspecto coherente al resto del sitio -->
           <textarea id="content"
                     class="form-control textarea-like"
                     placeholder="¿Qué quieres compartir con la comunidad?"
@@ -56,7 +55,7 @@
     </div>
   </div>
 
-  <!-- (Opcional) tus últimas publicaciones para dar contexto -->
+  <!-- Tus últimas publicaciones -->
   <div class="topic-container mt-4">
     <div class="subforum-title">
       <h4 class="m-0">Tus últimas publicaciones</h4>
@@ -78,7 +77,6 @@
   const clearBtn  = document.getElementById('clearBtn');
   const alertArea = document.getElementById('alertArea');
   const myPostsEl = document.getElementById('myPosts');
-
   const MAX = 2000;
 
   function showAlert(type, msg){
@@ -86,16 +84,14 @@
     alertArea.className = `alert alert-${type}`;
     alertArea.textContent = msg;
   }
-  function hideAlert(){
-    alertArea.style.display = 'none';
-  }
+  function hideAlert(){ alertArea.style.display = 'none'; }
 
   function updateCounter(){
     const len = (ta.value || '').length;
     counter.textContent = `${len} / ${MAX}`;
   }
 
-  // Auto-grow básico del textarea
+  // Auto-grow del textarea
   function autoGrow(el){
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 360) + 'px';
@@ -123,11 +119,13 @@
     }
     ta.classList.remove('is-invalid');
 
+    // evita doble submit
     publishBtn.disabled = true;
+    const prevHTML = publishBtn.innerHTML;
     publishBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Publicando…';
 
     try{
-      const r = await fetch('{{ url_for("forum.create_post")|replace("/api/posts","") }}/api/posts', {
+      const r = await fetch('{{ url_for("forum.create_post") }}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: value })
@@ -140,19 +138,18 @@
       ta.value = '';
       updateCounter();
       autoGrow(ta);
-      // recargar últimas publicaciones
       loadMyPosts();
     }catch(err){
       showAlert('danger', err.message || 'Error publicando.');
     }finally{
       publishBtn.disabled = false;
-      publishBtn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Publicar';
+      publishBtn.innerHTML = prevHTML;
     }
   });
 
   async function loadMyPosts(){
     try{
-      const res = await fetch('/api/posts');
+      const res = await fetch('{{ url_for("forum.list_posts") }}'); // GET /api/posts
       const items = await res.json();
       const my = (items || []).filter(p => p.editable).slice(0,5);
 
@@ -160,18 +157,19 @@
         myPostsEl.innerHTML = '<div class="muted">Aún no tienes publicaciones.</div>';
         return;
       }
+      const esc = (s='') => s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
       myPostsEl.innerHTML = my.map(p => `
         <div class="post-card mb-2">
           <div class="d-flex justify-content-between">
             <div>
-              <strong>${p.author || 'Tú'}</strong>
+              <strong>${esc(p.author || 'Tú')}</strong>
               <span class="post-meta"> · ${new Date(p.created_at).toLocaleString()}</span>
             </div>
             <div class="post-actions">
-              <a class="text-decoration-none" href="{{ url_for('auth.dashboard') }}"><i class="bi bi-chat-left-text me-1"></i>ver</a>
+              <a class="text-decoration-none" href="{{ url_for('forum_pages.index') }}"><i class="bi bi-chat-left-text me-1"></i>ver</a>
             </div>
           </div>
-          <div class="mt-1 post-content">${(p.content || '').replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</div>
+          <div class="mt-1 post-content">${esc(p.content)}</div>
         </div>
       `).join('');
     }catch(e){

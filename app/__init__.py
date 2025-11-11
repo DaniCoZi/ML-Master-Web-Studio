@@ -61,10 +61,22 @@ def create_app():
     from app.controllers.forum_controller import forum_bp
     app.register_blueprint(forum_bp)
 
+    # ✅ NEW: foro HTML pages
+    from app.controllers.forum_pages_controller import forum_pages_bp
+    app.register_blueprint(forum_pages_bp)
+
+
     # Carga de usuario para Flask-Login
     @login_manager.user_loader
     def load_user(user_id: str):
         from app.models.user import User
         return User.query.get(int(user_id))
+
+
+    with app.app_context():
+        print("=== URL MAP ===")
+        for rule in app.url_map.iter_rules():
+            print(rule.endpoint, "->", rule)
+
 
     return app
