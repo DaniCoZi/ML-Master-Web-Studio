@@ -132,3 +132,53 @@ header .brand{ font-size:0 !important; }
 }
 .bar-icon i{ font-size:20px; line-height:1; }
 
+/* Barra superior del foro */
+.forum-header-bar {
+  background: #051633;        /* azul oscuro */
+  color: #fff;
+}
+
+/* Marca / logo */
+.forum-brand {
+  font-weight: 700;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+/* Links de navegación del foro */
+.forum-nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  transition: all 0.15s ease-in-out;
+}
+
+.forum-nav-link:hover {
+  opacity: 1;
+}
+
+/* Pestaña activa */
+.forum-nav-link.active {
+  background: #ffffff;
+  color: #051633;
+  opacity: 1;
+}
+
+/* Texto usuario */
+.forum-user {
+  color: #e6ecff;
+}
+
+/* Botón logout */
+.forum-logout-btn {
+  border-color: #ffffffaa;
+}
+
+/* Para que el header no tenga tarjeta blanca alrededor */
+.forum-header {
+  margin-bottom: 1.5rem;
+}
