@@ -1,71 +1,62 @@
-<header>
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-
-  <!-- NavBar -->
-  <div class="navbar">
-    <nav class="navigation hide" id="navigation">
-      <span class="close-icon" id="close-icon" onclick="showIconBar()">
-        <i class="bi bi-x"></i>
-      </span>
-      <ul class="nav-list">
-        <li class="nav-item"><a href="{{ url_for('auth.dashboard') }}">Foros</a></li>
-        <li class="nav-item"><a href="{{ url_for('auth.dashboard_posts') }}">Publicaciones</a></li>
-        <!-- demo de detalle (puedes esconderlo si no lo usas) -->
-        <li class="nav-item"><a href="{{ url_for('forum_pages.new_post_page') }}">Nueva publicación</a></li>
-      </ul>
-    </nav>
-
-    <a class="bar-icon" id="iconBar" onclick="hideIconBar()">
-      <i class="bi bi-list"></i>
-    </a>
-
-    <!-- antes -->
-    <!-- <div class="brand">Master Web Studio</div> -->
-
-    <!-- después -->
-    <div class="brand">
-      <a href="{{ url_for('auth.dashboard') }}" class="brand-link" aria-label="Ir a foros">
-        <img
-          src="{{ url_for('static', filename='img/Logo.png') }}"
-          alt="Master Web Studio"
-          class="brand-logo"
-          decoding="async"
-          height="45"
-        >
+{# templates/forum/_forum_header.html #}
+<header class="forum-header">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <!-- Logo / Marca -->
+      <a class="navbar-brand" href="{{ url_for('main.index') }}">
+        Revelu
       </a>
+
+      <!-- Botón hamburguesa en móvil (opcional) -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#forumNavbar" aria-controls="forumNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="forumNavbar">
+        <!-- Links principales izquierda -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+          <li class="nav-item">
+            <a class="nav-link{% if request.endpoint == 'forum_pages.index' %} active{% endif %}"
+               href="{{ url_for('forum_pages.index') }}">
+              Foros
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link{% if request.endpoint == 'forum_pages.posts_page' %} active{% endif %}"
+               href="{{ url_for('forum_pages.posts_page') }}">
+              Publicaciones
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link{% if request.endpoint == 'forum_pages.new_post_page' %} active{% endif %}"
+               href="{{ url_for('forum_pages.new_post_page') }}">
+              Nueva publicación
+            </a>
+          </li>
+        </ul>
+
+        <!-- Zona derecha: usuario + cerrar sesión -->
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          {# Si quieres mostrar el email o nombre #}
+          {% if current_user.is_authenticated %}
+          <li class="nav-item d-flex align-items-center me-2 text-light small">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ current_user.nombre or current_user.email }}
+          </li>
+          {% endif %}
+
+          <li class="nav-item">
+            <a class="btn btn-outline-light btn-sm"
+               href="{{ url_for('auth.logout') }}">
+              <i class="bi bi-box-arrow-right me-1"></i>
+              Cerrar sesión
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
-
-  </div>
-
-  <!-- SearchBox -->
-  <div class="search-box">
-    <div>
-      <select>
-        <option value="Everything">Todo</option>
-        <option value="Titles">Títulos</option>
-        <option value="Descriptions">Descripciones</option>
-      </select>
-      <form action="{{ url_for('auth.dashboard_posts') }}" method="get" style="display:inline-flex;">
-        <input type="text" name="q" placeholder="Buscar en la comunidad...">
-        <button type="submit"><i class="bi bi-search"></i></button>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    // Sólo los toggles del menú (lo mínimo que usaba tu header)
-    function hideIconBar(){
-      const iconBar = document.getElementById("iconBar");
-      const navigation = document.getElementById("navigation");
-      iconBar.style.display = "none";
-      navigation.classList.remove("hide");
-    }
-    function showIconBar(){
-      const iconBar = document.getElementById("iconBar");
-      const navigation = document.getElementById("navigation");
-      iconBar.style.display = "block";
-      navigation.classList.add("hide");
-    }
-  </script>
+  </nav>
 </header>

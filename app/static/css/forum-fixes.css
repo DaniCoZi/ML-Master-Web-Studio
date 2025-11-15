@@ -36,7 +36,7 @@ footer .container {
 
 /* Contenedor “pill” del buscador */
 .search-box > div{
-  background: rgba(var(--forum-primary-rgb), .08) !important;
+  /*background: rgba(var(--forum-primary-rgb), .08) !important;*/
   border: 0px solid rgba(var(--forum-primary-rgb), .12) !important;
   box-shadow: 0 8px 30px rgba(0,0,0,.04);
   border-radius: 16px !important;
@@ -67,6 +67,7 @@ footer .container {
   background: var(--forum-primary) !important;
   border:0 !important; color:#fff !important;
   box-shadow: 0 10px 30px rgba(var(--forum-primary-rgb), .25);
+  gap: 12px;
 }
 
 /* Select con flecha (sin outline nativo) */

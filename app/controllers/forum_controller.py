@@ -24,7 +24,7 @@ def list_posts():
         })
     return jsonify(out), 200
 
-# ---- PREVIEW MODERATION: para feedback en el front
+# ---- PREVIEW MODERATION
 @forum_bp.post("/moderate")
 @login_required
 def moderate_preview():
@@ -33,7 +33,7 @@ def moderate_preview():
     result = analyze_text(content)
     return jsonify(result), 200
 
-# ---- CREATE: crear post (con moderación obligatoria)
+# ---- CREATE
 @forum_bp.post("/posts")
 @login_required
 def create_post():
@@ -43,19 +43,22 @@ def create_post():
         return jsonify({"error": "El contenido no puede estar vacío."}), 400
 
     mod = analyze_text(content)
-    if mod["label"] != "positive":
+
+    # Solo bloquear negativos
+    if mod["label"] == "negative":
         return jsonify({
             "allowed": False,
-            "reason": "El mensaje no cumple el tono positivo/constructivo.",
+            "reason": "El mensaje tiene un tono negativo. Ajusta el texto para publicarlo.",
             "analysis": mod
         }), 422
 
+    # Neutral / positive → permitir
     post = Post(user_id=current_user.id, content=content)
     db.session.add(post)
     db.session.commit()
     return jsonify({"id": post.id, "allowed": True}), 201
 
-# ---- UPDATE: actualizar post propio (con moderación)
+# ---- UPDATE
 @forum_bp.put("/posts/<int:post_id>")
 @login_required
 def update_post(post_id):
@@ -69,14 +72,15 @@ def update_post(post_id):
         return jsonify({"error": "El contenido no puede estar vacío."}), 400
 
     mod = analyze_text(content)
-    if mod["label"] != "positive":
+
+    if mod["label"] == "negative":
         return jsonify({"allowed": False, "analysis": mod}), 422
 
     post.content = content
     db.session.commit()
     return jsonify({"ok": True, "allowed": True}), 200
 
-# ---- DELETE: borrar post propio
+# ---- DELETE
 @forum_bp.delete("/posts/<int:post_id>")
 @login_required
 def delete_post(post_id):
