@@ -64,7 +64,7 @@ def analyze_text(text: str) -> dict:
     Devuelve:
        {
          "label": "positive|neutral|negative",
-         "score": float(0..1)  # confianza aprox.
+         "score": float(0..1)  # confianza aprox. de la clase final
          "reasons": [...],
          "suggestion": str|None,
          "length": int
@@ -92,28 +92,49 @@ def analyze_text(text: str) -> dict:
         }
 
     # Predicción de clase y probabilidades
-    pred = model.predict([text])[0]
+    raw_pred = model.predict([text])[0]
     proba = model.predict_proba([text])[0]
     classes = list(model.classes_)
 
-    try:
-        idx = classes.index(pred)
-        score = float(proba[idx])  # probabilidad de la clase predicha
-    except ValueError:
-        score = 0.0
+    # Mapeamos clases a probas en un dict
+    proba_dict = {cls: float(p) for cls, p in zip(classes, proba)}
+    neg_p = proba_dict.get("negative", 0.0)
+    neu_p = proba_dict.get("neutral", 0.0)
+    pos_p = proba_dict.get("positive", 0.0)
 
-    # Normalizamos label a solo 3 valores posibles
-    label = str(pred).lower()
-    if label not in ("positive", "neutral", "negative"):
-        label = "neutral"
+    # ----------------------------
+    # REGLA DE DECISIÓN AJUSTADA
+    # ----------------------------
+    # Solo consideramos "negative" si la prob de negative es alta.
+    NEGATIVE_THRESHOLD = 0.70  # puedes subir/bajar este valor
 
-    # Sugerencia solo si es negativo
+    if neg_p >= NEGATIVE_THRESHOLD:
+        label = "negative"
+        score = neg_p
+    else:
+        # Si no es claramente negative, escogemos entre neutral/positive
+        if pos_p >= neu_p:
+            label = "positive"
+            score = pos_p
+        else:
+            label = "neutral"
+            score = neu_p
+
+    # Sugerencia solo si es negativo (según nuestra regla)
     suggestion = _polite_rewrite(text) if label == "negative" else None
+
+    reasons = [
+        f"raw_pred:{str(raw_pred).lower()}",
+        f"p_negative:{round(neg_p, 3)}",
+        f"p_neutral:{round(neu_p, 3)}",
+        f"p_positive:{round(pos_p, 3)}",
+        f"final_label:{label}",
+    ]
 
     return {
         "label": label,
         "score": round(score, 3),
-        "reasons": [f"ml_label:{label}", f"ml_confidence:{round(score, 3)}"],
+        "reasons": reasons,
         "suggestion": suggestion,
         "length": len(text.split()),
     }
