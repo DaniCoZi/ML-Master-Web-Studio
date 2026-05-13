@@ -1,149 +1,41 @@
-{% set page_title = "Revelu | Publicaciones" %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ page_title }}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-</head>
-<body>
-{% include "forum/_forum_header.html" %}
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  .page-hero {
-    background: linear-gradient(135deg, #1a1a2e, #0f3460);
-    padding: 36px 0 30px;
-    color: #fff;
+  body { font-family: 'Inter', sans-serif; background: #f0f4f8; margin: 0; }
+  .forum-topbar {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 14px 0;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    position: sticky; top: 0; z-index: 100;
   }
-  .page-hero h2 { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
-  .page-hero p  { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0; }
-  .page-hero .btn-new { background: #e94560; color: #fff; border: none; border-radius: 20px; padding: 9px 22px; font-size: 0.88rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
-  .page-hero .btn-new:hover { background: #c73652; color: #fff; transform: translateY(-1px); }
-
-  .page-content { max-width: 900px; margin: 0 auto; padding: 32px 16px 60px; }
-
-  .posts-grid { display: flex; flex-direction: column; gap: 14px; }
-
-  .post-card {
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-    padding: 20px 24px;
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    transition: box-shadow 0.2s, transform 0.2s;
-    text-decoration: none;
-    color: inherit;
-    border-left: 4px solid transparent;
-  }
-  .post-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.1); transform: translateY(-1px); border-left-color: #e94560; }
-
-  .post-avatar {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #0f3460, #e94560);
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 1.1rem; font-weight: 700; flex-shrink: 0;
-  }
-  .post-body { flex: 1; min-width: 0; }
-  .post-content { font-size: 0.95rem; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .post-meta { display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: #9ca3af; flex-wrap: wrap; }
-  .post-author { color: #0f3460; font-weight: 600; }
-  .post-badge { background: #dbeafe; color: #1d4ed8; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; }
-  .post-right { text-align: right; flex-shrink: 0; font-size: 0.8rem; color: #9ca3af; }
-  .post-arrow { color: #e94560; font-size: 1.1rem; margin-top: 4px; }
-
-  .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
-  .empty-state i { font-size: 3rem; margin-bottom: 12px; display: block; }
-  .empty-state p { font-size: 1rem; margin-bottom: 20px; }
-
-  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
-  .toolbar-left { font-size: 0.9rem; color: #6b7280; }
-  .toolbar-left strong { color: #1a1a2e; }
-
-  .loading-skeleton { background: #fff; border-radius: 14px; padding: 20px 24px; margin-bottom: 14px; }
-  .skel { background: #f1f5f9; border-radius: 6px; animation: shimmer 1.5s infinite; }
-  @keyframes shimmer { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+  .forum-topbar .brand { color: #e94560; font-weight: 700; font-size: 1.4rem; text-decoration: none; letter-spacing: 1px; }
+  .forum-topbar .nav-link { color: rgba(255,255,255,0.75); font-size: 0.9rem; text-decoration: none; padding: 6px 14px; border-radius: 20px; transition: all 0.2s; }
+  .forum-topbar .nav-link:hover, .forum-topbar .nav-link.active { background: rgba(233,69,96,0.2); color: #e94560; }
+  .forum-topbar .user-badge { background: rgba(255,255,255,0.1); color: #fff; border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; }
+  .forum-topbar .btn-logout { background: rgba(233,69,96,0.15); color: #e94560; border: 1px solid rgba(233,69,96,0.3); border-radius: 20px; padding: 6px 16px; font-size: 0.85rem; text-decoration: none; transition: all 0.2s; }
+  .forum-topbar .btn-logout:hover { background: #e94560; color: #fff; }
+  .forum-topbar .btn-new-post { background: linear-gradient(135deg, #e94560, #c73652); color: #fff; border: none; border-radius: 20px; padding: 7px 18px; font-size: 0.85rem; text-decoration: none; font-weight: 600; transition: all 0.2s; }
+  .forum-topbar .btn-new-post:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(233,69,96,0.4); color: #fff; }
 </style>
-
-<div class="page-hero">
-  <div class="container d-flex align-items-center justify-content-between flex-wrap gap-3">
-    <div>
-      <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:4px;">
-        <a href="{{ url_for('forum_pages.index') }}" style="color:rgba(255,255,255,0.5);text-decoration:none;">Comunidad</a> › Publicaciones
-      </div>
-      <h2><i class="bi bi-chat-dots-fill me-2" style="color:#e94560;"></i>Publicaciones</h2>
-      <p>Explora lo que comparte la comunidad</p>
+<nav class="forum-topbar">
+  <div class="container d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <a class="brand" href="{{ url_for('main.index') }}">REVELU</a>
+      <a class="nav-link {% if request.endpoint == 'forum_pages.index' %}active{% endif %}" href="{{ url_for('forum_pages.index') }}">
+        <i class="bi bi-house-door me-1"></i>Foros
+      </a>
+      <a class="nav-link {% if request.endpoint == 'forum_pages.posts_page' %}active{% endif %}" href="{{ url_for('forum_pages.posts_page') }}">
+        <i class="bi bi-chat-dots me-1"></i>Publicaciones
+      </a>
     </div>
-    <a class="btn-new" href="{{ url_for('forum_pages.new_post_page') }}">
-      <i class="bi bi-plus-lg me-1"></i>Nueva publicación
-    </a>
-  </div>
-</div>
-
-<div class="page-content">
-  <div class="toolbar">
-    <div class="toolbar-left">Total: <strong id="postCount">cargando...</strong></div>
-  </div>
-
-  <div id="postsGrid" class="posts-grid">
-    <div class="loading-skeleton">
-      <div class="skel" style="height:16px;width:60%;margin-bottom:8px;"></div>
-      <div class="skel" style="height:12px;width:40%;"></div>
-    </div>
-    <div class="loading-skeleton">
-      <div class="skel" style="height:16px;width:75%;margin-bottom:8px;"></div>
-      <div class="skel" style="height:12px;width:35%;"></div>
+    <div class="d-flex align-items-center gap-3">
+      {% if current_user.is_authenticated %}
+        <span class="user-badge"><i class="bi bi-person-circle me-1"></i>{{ current_user.nombre or current_user.email }}</span>
+      {% endif %}
+      <a class="btn-new-post" href="{{ url_for('forum_pages.new_post_page') }}">
+        <i class="bi bi-plus-lg me-1"></i>Nueva publicación
+      </a>
+      <a class="btn-logout" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Salir</a>
     </div>
   </div>
-</div>
-
-{% include "forum/_forum_footer.html" %}
-
-<script>
-(async () => {
-  const grid = document.getElementById('postsGrid');
-  const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-  try {
-    const r = await fetch('/api/posts');
-    const data = await r.json();
-    document.getElementById('postCount').textContent = (data||[]).length + ' publicaciones';
-    if (!Array.isArray(data) || !data.length) {
-      grid.innerHTML = `<div class="empty-state">
-        <i class="bi bi-chat-square-dots"></i>
-        <p>Aún no hay publicaciones. ¡Sé el primero!</p>
-        <a href="{{ url_for('forum_pages.new_post_page') }}" style="background:#e94560;color:#fff;border-radius:20px;padding:10px 24px;text-decoration:none;font-weight:600;">
-          <i class="bi bi-plus-lg me-1"></i>Crear publicación
-        </a>
-      </div>`;
-      return;
-    }
-    const detailBase = "{{ url_for('auth.dashboard_detail', post_id=0) }}".replace('0', '__ID__');
-    grid.innerHTML = data.map(p => {
-      const initial = (p.author||'U')[0].toUpperCase();
-      const href = detailBase.replace('__ID__', p.id);
-      const date = new Date(p.created_at).toLocaleDateString('es-CO', {day:'numeric',month:'short',year:'numeric'});
-      const time = new Date(p.created_at).toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'});
-      return `<a class="post-card" href="${href}">
-        <div class="post-avatar">${initial}</div>
-        <div class="post-body">
-          <div class="post-content">${esc(p.content)}</div>
-          <div class="post-meta">
-            <span class="post-author"><i class="bi bi-person-fill me-1"></i>${esc(p.author||'Usuario')}</span>
-            <span class="post-badge"><i class="bi bi-chat me-1"></i>Foro General</span>
-            <span><i class="bi bi-clock me-1"></i>${date} · ${time}</span>
-          </div>
-        </div>
-        <div class="post-right">
-          <i class="bi bi-chevron-right post-arrow"></i>
-        </div>
-      </a>`;
-    }).join('');
-  } catch(e) {
-    grid.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle" style="color:#ef4444;"></i><p>Error cargando publicaciones.</p></div>';
-  }
-})();
-</script>
-</body>
-</html>
+</nav>
