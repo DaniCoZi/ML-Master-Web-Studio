@@ -1,376 +1,474 @@
-{# templates/forum/_forum_header.html #}
-<header class="forum-header mb-4">
+{% set page_title = "Revelu | Nueva publicación" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page_title }}</title>
-
-  <!-- CSS del sitio -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/forums.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/forum-fixes.css') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background: #f0f4f8; font-family: 'Inter', sans-serif; }
 
-  <!-- Bootstrap Icons local -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+    .forum-topbar {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 14px 0;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    .forum-topbar .brand { color: #e94560; font-weight: 700; font-size: 1.4rem; text-decoration: none; letter-spacing: 1px; }
+    .forum-topbar .nav-link { color: rgba(255,255,255,0.75); font-size: 0.9rem; text-decoration: none; padding: 6px 14px; border-radius: 20px; transition: all 0.2s; }
+    .forum-topbar .nav-link:hover, .forum-topbar .nav-link.active { background: rgba(233,69,96,0.2); color: #e94560; }
+    .forum-topbar .user-badge { background: rgba(255,255,255,0.1); color: #fff; border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; }
+    .forum-topbar .btn-logout { background: rgba(233,69,96,0.15); color: #e94560; border: 1px solid rgba(233,69,96,0.3); border-radius: 20px; padding: 6px 16px; font-size: 0.85rem; text-decoration: none; transition: all 0.2s; }
+    .forum-topbar .btn-logout:hover { background: #e94560; color: #fff; }
 
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital@1&display=swap" rel="stylesheet">
+    .page-wrapper { max-width: 800px; margin: 0 auto; padding: 32px 16px 60px; }
 
-  <div class="forum-header-bar">
-    <div class="container d-flex align-items-center justify-content-between py-2">
+    .breadcrumb-bar { font-size: 0.85rem; color: #6c757d; margin-bottom: 20px; }
+    .breadcrumb-bar a { color: #0f3460; text-decoration: none; }
+    .breadcrumb-bar a:hover { text-decoration: underline; }
 
-      <!-- IZQUIERDA: Logo + enlaces -->
-      <div class="d-flex align-items-center gap-3">
-        <a class="forum-brand" href="{{ url_for('main.index') }}">Revelu</a>
-        <a class="forum-nav-link{% if request.endpoint == 'forum_pages.index' %} active{% endif %}"href="{{ url_for('forum_pages.index') }}">Foros</a>
-        <a class="forum-nav-link{% if request.endpoint == 'forum_pages.posts_page' %} active{% endif %}"href="{{ url_for('forum_pages.posts_page') }}">Publicaciones</a>
-        <a class="forum-nav-link{% if request.endpoint == 'forum_pages.new_post_page' %} active{% endif %}"href="{{ url_for('forum_pages.new_post_page') }}">Nueva publicación</a>
+    .card-post {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .card-header-post {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header-post h3 { color: #fff; margin: 0; font-size: 1.15rem; font-weight: 600; }
+    .btn-back { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 18px; font-size: 0.85rem; text-decoration: none; transition: all 0.2s; }
+    .btn-back:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+    .card-body-post { padding: 28px; }
+
+    .alert-area { margin-bottom: 16px; border-radius: 10px; padding: 12px 16px; font-size: 0.9rem; display: none; }
+    .alert-success-custom { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+    .alert-danger-custom  { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+
+    .form-label-custom { font-weight: 600; color: #1a1a2e; font-size: 0.9rem; margin-bottom: 8px; display: block; }
+    
+    .textarea-mod {
+      width: 100%;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      resize: vertical;
+      min-height: 140px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      color: #1a1a2e;
+    }
+    .textarea-mod:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,0.1); }
+    .textarea-mod.is-negative { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+    .textarea-mod.is-positive { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+    .textarea-mod.is-neutral  { border-color: #6b7280; box-shadow: 0 0 0 3px rgba(107,114,128,0.1); }
+
+    .char-counter { font-size: 0.8rem; color: #9ca3af; text-align: right; margin-top: 6px; }
+
+    /* Caja de moderación */
+    .mod-box {
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 14px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+    .mod-box.mod-negative { background: #fef2f2; border: 1px solid #fca5a5; }
+    .mod-box.mod-positive { background: #f0fdf4; border: 1px solid #86efac; }
+    .mod-box.mod-neutral  { background: #f8fafc; border: 1px solid #cbd5e1; }
+
+    .mod-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .mod-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-negative { background: #ef4444; color: #fff; }
+    .badge-positive { background: #10b981; color: #fff; }
+    .badge-neutral  { background: #6b7280; color: #fff; }
+    .mod-score { font-size: 0.8rem; color: #6b7280; }
+    .mod-msg { font-size: 0.88rem; color: #374151; }
+
+    .suggestion-box {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      font-size: 0.88rem;
+      color: #374151;
+      line-height: 1.6;
+    }
+    .suggestion-label { font-size: 0.78rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .btn-use-suggestion {
+      margin-top: 10px;
+      background: #0f3460;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-use-suggestion:hover { background: #1a1a2e; }
+
+    .actions-bar { display: flex; gap: 12px; margin-top: 20px; }
+    .btn-publish {
+      background: linear-gradient(135deg, #0f3460, #e94560);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-publish:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(233,69,96,0.35); }
+    .btn-publish:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-clear {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 11px 22px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clear:hover { background: #e2e8f0; }
+
+    /* Últimas publicaciones */
+    .card-myposts {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      margin-top: 24px;
+      overflow: hidden;
+    }
+    .card-myposts-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px 24px;
+      font-weight: 600;
+      color: #1a1a2e;
+      font-size: 0.95rem;
+    }
+    .card-myposts-body { padding: 16px 24px; }
+    .post-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.2s;
+    }
+    .post-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .post-item:last-child { margin-bottom: 0; }
+    .post-author { font-weight: 600; font-size: 0.88rem; color: #0f3460; }
+    .post-date { font-size: 0.8rem; color: #9ca3af; margin-left: 8px; }
+    .post-text { font-size: 0.9rem; color: #374151; margin-top: 6px; line-height: 1.5; }
+    .post-empty { color: #9ca3af; font-size: 0.9rem; text-align: center; padding: 20px 0; }
+
+    /* Indicador de análisis en progreso */
+    .analyzing-indicator {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    .analyzing-indicator.show { display: flex; }
+    .dot-pulse { width: 6px; height: 6px; border-radius: 50%; background: #6b7280; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="forum-topbar">
+  <div class="container d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <a class="brand" href="{{ url_for('main.index') }}">REVELU</a>
+      <a class="nav-link" href="{{ url_for('forum_pages.index') }}">Foros</a>
+      <a class="nav-link" href="{{ url_for('forum_pages.posts_page') }}">Publicaciones</a>
+      <a class="nav-link active" href="{{ url_for('forum_pages.new_post_page') }}">Nueva publicación</a>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      {% if current_user.is_authenticated %}
+        <span class="user-badge"><i class="bi bi-person-circle me-1"></i>{{ current_user.nombre or current_user.email }}</span>
+      {% endif %}
+      <a class="btn-logout" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Salir</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb-bar">
+    <a href="{{ url_for('main.index') }}">Inicio</a> &rsaquo;
+    <a href="{{ url_for('forum_pages.index') }}">Comunidad</a> &rsaquo;
+    Nueva publicación
+  </div>
+
+  <!-- TARJETA PRINCIPAL -->
+  <div class="card-post">
+    <div class="card-header-post">
+      <h3><i class="bi bi-pencil-square me-2"></i>Crear nueva publicación</h3>
+      <a class="btn-back" href="{{ url_for('forum_pages.index') }}">&#8592; Volver</a>
+    </div>
+    <div class="card-body-post">
+
+      <div id="alertArea" class="alert-area"></div>
+
+      <label class="form-label-custom" for="content">¿Qué quieres compartir con la comunidad?</label>
+
+      <textarea id="content" class="textarea-mod" rows="6" maxlength="2000"
+        placeholder="Escribe tu publicación aquí... Recuerda mantener un tono respetuoso y constructivo."></textarea>
+
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <div class="analyzing-indicator" id="analyzingIndicator">
+          <div class="dot-pulse"></div>
+          <span>Analizando contenido...</span>
+        </div>
+        <div></div>
+        <div class="char-counter"><span id="charCount">0</span> / 2000</div>
       </div>
 
-      <!-- DERECHA: usuario + logout -->
-      <div class="d-flex align-items-center gap-3">
-        {% if current_user.is_authenticated %}
-          <span class="forum-user small">
-            <i class="bi bi-person-circle me-1"></i>
-            {{ current_user.nombre or current_user.email }}
-          </span>
-        {% endif %}
-        
-        <a class="btn btn-sm btn-outline-light forum-logout-btn"href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión</a>
+      <!-- Caja de moderación -->
+      <div id="modBox" class="mod-box">
+        <div class="mod-header">
+          <span id="modBadge" class="mod-badge"></span>
+          <span id="modScore" class="mod-score"></span>
+        </div>
+        <div id="modMsg" class="mod-msg"></div>
+        <div id="suggestionWrap" style="display:none;">
+          <div class="suggestion-box">
+            <div class="suggestion-label"><i class="bi bi-lightbulb me-1"></i>Sugerencia de mejora</div>
+            <div id="suggestionText"></div>
+          </div>
+          <button class="btn-use-suggestion" id="btnUseSuggestion">
+            <i class="bi bi-arrow-up-circle me-1"></i>Usar esta sugerencia
+          </button>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <button id="btnPublish" class="btn-publish" type="button">
+          <i class="bi bi-send-fill"></i> Publicar
+        </button>
+        <button id="btnClear" class="btn-clear" type="button">
+          <i class="bi bi-x-circle me-1"></i>Limpiar
+        </button>
       </div>
 
     </div>
   </div>
-</header>
 
-
-<div class="container">
-  <!-- Migas -->
-  <div class="forum-breadcrumb mb-3">
-    <a href="{{ url_for('main.index') }}">Inicio</a> /
-    <a href="{{ url_for('forum_pages.index') }}">Comunidad</a> /
-    <span>Nueva publicación</span>
-  </div>
-
-  <!-- Tarjeta principal -->
-  <div class="topic-container">
-    <div class="subforum-title d-flex align-items-center justify-content-between">
-      <h3 class="m-0">Crear nueva publicación</h3>
-      <a class="btn btn-soft" href="{{ url_for('forum_pages.index') }}">
-        <i class="bi bi-arrow-left"></i> Volver
-      </a>
-    </div>
-
-    <div class="p-3 p-md-4">
-      <!-- Mensajes -->
-      <div id="alertArea" class="mb-3" style="display:none;"></div>
-
-      <!-- Formulario -->
-      <form id="postForm" class="needs-validation" novalidate>
-        <div class="mb-3">
-          <label for="content" class="form-label fw-semibold">Contenido</label>
-
-          <textarea id="content"
-                    class="form-control textarea-like"
-                    placeholder="¿Qué quieres compartir con la comunidad?"
-                    rows="5"
-                    maxlength="2000"
-                    required></textarea>
-
-          <!-- Moderación en vivo -->
-          <div id="modBox" class="alert d-none mt-3" role="alert">
-            <div class="d-flex align-items-center gap-2">
-              <span id="modLabel" class="badge text-uppercase"></span>
-              <span id="modScore" class="small"></span>
-            </div>
-            <div id="modMsg" class="mt-1 small"></div>
-
-            <div id="modSuggestionWrap" class="mt-2 d-none">
-              <div class="small text-muted mb-1">Sugerencia de tono más positivo:</div>
-              <div id="modSuggestion" class="p-2 border rounded bg-light"></div>
-              <button id="useSuggestion" type="button" class="btn btn-soft btn-sm mt-2">
-                Usar sugerencia
-              </button>
-            </div>
-          </div>
-
-
-          <div class="form-text d-flex justify-content-between mt-1">
-            <span>Se amable y claro. Puedes editar luego.</span>
-            <span id="charCounter">0 / 2000</span>
-          </div>
-
-          <div class="invalid-feedback">
-            El contenido no puede estar vacío.
-          </div>
-        </div>
-
-        <div class="d-flex gap-2">
-          <button id="publishBtn" class="btn btn-primary" type="submit">
-            <i class="bi bi-send-fill me-1"></i> Publicar
-          </button>
-          <button id="clearBtn" class="btn btn-soft" type="button">
-            Limpiar
-          </button>
-        </div>
-      </form>
+  <!-- ÚLTIMAS PUBLICACIONES -->
+  <div class="card-myposts">
+    <div class="card-myposts-header"><i class="bi bi-clock-history me-2"></i>Tus últimas publicaciones</div>
+    <div class="card-myposts-body" id="myPosts">
+      <div class="post-empty">Cargando...</div>
     </div>
   </div>
 
-  <!-- Tus últimas publicaciones -->
-  <div class="topic-container mt-4">
-    <div class="subforum-title">
-      <h4 class="m-0">Tus últimas publicaciones</h4>
-    </div>
-    <div class="p-3 p-md-4" id="myPosts">
-      <div class="muted">Cargando…</div>
-    </div>
-  </div>
 </div>
-
-{% include 'forum/_forum_footer.html' %}
 
 <script>
 (() => {
   const ta          = document.getElementById('content');
-  const counter     = document.getElementById('charCounter');
-  const form        = document.getElementById('postForm');
-  const publishBtn  = document.getElementById('publishBtn');
-  const clearBtn    = document.getElementById('clearBtn');
+  const charCount   = document.getElementById('charCount');
   const alertArea   = document.getElementById('alertArea');
-  const myPostsEl   = document.getElementById('myPosts');
+  const modBox      = document.getElementById('modBox');
+  const modBadge    = document.getElementById('modBadge');
+  const modScore    = document.getElementById('modScore');
+  const modMsg      = document.getElementById('modMsg');
+  const sugWrap     = document.getElementById('suggestionWrap');
+  const sugText     = document.getElementById('suggestionText');
+  const btnUse      = document.getElementById('btnUseSuggestion');
+  const btnPublish  = document.getElementById('btnPublish');
+  const btnClear    = document.getElementById('btnClear');
+  const analyzing   = document.getElementById('analyzingIndicator');
+  const myPosts     = document.getElementById('myPosts');
 
-  // Moderación en vivo (UI)
-  const modBox        = document.getElementById('modBox');
-  const modLabel      = document.getElementById('modLabel');
-  const modScore      = document.getElementById('modScore');
-  const modMsg        = document.getElementById('modMsg');
-  const modSugWrap    = document.getElementById('modSuggestionWrap');
-  const modSuggestion = document.getElementById('modSuggestion');
-  const useSuggestion = document.getElementById('useSuggestion');
+  let lastMod = null;
 
-  const MAX = 2000;
-
-  function showAlert(type, msg){
-    alertArea.style.display = '';
-    alertArea.className = `alert alert-${type}`;
+  function showAlert(type, msg) {
+    alertArea.className = 'alert-area ' + (type === 'success' ? 'alert-success-custom' : 'alert-danger-custom');
     alertArea.textContent = msg;
-  }
-  function hideAlert(){ alertArea.style.display = 'none'; }
-
-  function updateCounter(){
-    const len = (ta.value || '').length;
-    counter.textContent = `${len} / ${MAX}`;
+    alertArea.style.display = 'block';
+    if (type === 'success') setTimeout(() => { alertArea.style.display = 'none'; }, 4000);
   }
 
-  // Auto-grow básico del textarea
-  function autoGrow(el){
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 360) + 'px';
+  function updateChar() {
+    charCount.textContent = (ta.value || '').length;
   }
 
-  // Debounce helper
-  function debounce(fn, ms=400){
+  function applyModUI(data) {
+    lastMod = data;
+    const cfg = {
+      negative: { box: 'mod-negative', badge: 'badge-negative', icon: 'bi-exclamation-triangle-fill', label: 'NEGATIVO', msg: '⚠️ Tu mensaje tiene un tono negativo. Corrígelo para poder publicar.' },
+      positive: { box: 'mod-positive', badge: 'badge-positive', icon: 'bi-hand-thumbs-up-fill',        label: 'POSITIVO', msg: '✅ ¡Excelente tono! Tu mensaje es positivo y constructivo.' },
+      neutral:  { box: 'mod-neutral',  badge: 'badge-neutral',  icon: 'bi-dash-circle-fill',           label: 'NEUTRAL',  msg: '💬 Mensaje neutro. Puedes publicarlo.' },
+    };
+    const c = cfg[data.label] || cfg.neutral;
+
+    modBox.className = 'mod-box ' + c.box;
+    modBox.style.display = 'block';
+    modBadge.className = 'mod-badge ' + c.badge;
+    modBadge.innerHTML = `<i class="bi ${c.icon}"></i>${c.label}`;
+    modScore.textContent = `confianza: ${Math.round(data.score * 100)}%`;
+    modMsg.textContent = c.msg;
+
+    ta.className = 'textarea-mod ' + (data.label === 'negative' ? 'is-negative' : data.label === 'positive' ? 'is-positive' : 'is-neutral');
+
+    if (data.label === 'negative' && data.suggestion) {
+      sugWrap.style.display = 'block';
+      sugText.textContent = data.suggestion;
+    } else {
+      sugWrap.style.display = 'none';
+    }
+
+    btnPublish.disabled = (data.label === 'negative');
+  }
+
+  function clearMod() {
+    modBox.style.display = 'none';
+    ta.className = 'textarea-mod';
+    btnPublish.disabled = false;
+    lastMod = null;
+  }
+
+  function debounce(fn, ms) {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
   }
 
-  // ----- MODERACIÓN EN VIVO -----
-  let lastModeration = null;
-
-  async function moderatePreview(text){
-    if(!text.trim()){
-      modBox.classList.add('d-none');
-      ta.classList.remove('is-valid','is-invalid');
-      publishBtn.disabled = false;
-      return;
-    }
-    try{
-      const res = await fetch('/api/moderate', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({content: text})
+  async function moderate(text) {
+    if (!text.trim()) { clearMod(); return; }
+    analyzing.classList.add('show');
+    try {
+      const r = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: text })
       });
-      const data = await res.json();
-
-      lastModeration = data; // guarda último resultado
-
-      // Mapear a estilos
-      const map = {
-        positive: {badge:'bg-success', box:'alert-success', msg:'¡Buen tono! Gracias por mantenerlo positivo.'},
-        neutral:  {badge:'bg-secondary', box:'alert-secondary', msg:'El mensaje es neutro. Puedes añadir detalles constructivos si quieres.'},
-        negative: {badge:'bg-danger', box:'alert-danger', msg:'El tono parece negativo. Ajusta el mensaje para publicarlo.'}
-      };
-
-      const m = map[data.label] || map.neutral;
-
-      // Pintar UI
-      modBox.className = `alert ${m.box} mt-3`;
-      modBox.classList.remove('d-none');
-      modLabel.className = `badge ${m.badge} text-uppercase`;
-      modLabel.textContent = data.label;
-      modScore.textContent = `score: ${data.score}`;
-      modMsg.textContent = m.msg;
-
-      // Resaltar textarea
-      ta.classList.remove('is-valid','is-invalid');
-      if (data.label === 'negative') ta.classList.add('is-invalid');
-      else if (data.label === 'positive') ta.classList.add('is-valid');
-
-      // Sugerencia si es negativa
-      if (data.label === 'negative' && data.suggestion){
-        modSugWrap.classList.remove('d-none');
-        modSuggestion.textContent = data.suggestion;
-      }else{
-        modSugWrap.classList.add('d-none');
-        modSuggestion.textContent = '';
-      }
-
-      // Bloquear publicar si es negativo
-      publishBtn.disabled = (data.label === 'negative');
-    }catch(e){
-      // En caso de fallo de red, no bloqueamos publicar
-      modBox.classList.add('d-none');
-      publishBtn.disabled = false;
-      ta.classList.remove('is-valid','is-invalid');
+      const data = await r.json();
+      applyModUI(data);
+    } catch(e) {
+      clearMod();
+    } finally {
+      analyzing.classList.remove('show');
     }
   }
 
-  const debouncedModerate = debounce(() => moderatePreview(ta.value), 420);
+  const debouncedModerate = debounce(text => moderate(text), 400);
 
-  // Eventos
   ta.addEventListener('input', () => {
-    updateCounter(); autoGrow(ta);
-    debouncedModerate();
+    updateChar();
+    if (!ta.value.trim()) { clearMod(); return; }
+    debouncedModerate(ta.value);
   });
 
-  window.addEventListener('load', () => {
-    updateCounter(); autoGrow(ta);
-    moderatePreview(ta.value);
+  btnUse.addEventListener('click', () => {
+    if (lastMod && lastMod.suggestion) {
+      ta.value = lastMod.suggestion;
+      updateChar();
+      moderate(ta.value);
+      ta.focus();
+    }
   });
 
-  clearBtn.addEventListener('click', () => {
+  btnClear.addEventListener('click', () => {
     ta.value = '';
-    hideAlert();
-    updateCounter();
-    autoGrow(ta);
-    modBox.classList.add('d-none');
-    publishBtn.disabled = false;
-    ta.classList.remove('is-valid','is-invalid');
+    updateChar();
+    clearMod();
+    alertArea.style.display = 'none';
     ta.focus();
   });
 
-  // Usar sugerencia del moderador
-  if (useSuggestion){
-    useSuggestion.addEventListener('click', () => {
-      if (lastModeration && lastModeration.suggestion){
-        ta.value = lastModeration.suggestion;
-        updateCounter(); autoGrow(ta);
-        moderatePreview(ta.value);
-        ta.focus();
-      }
-    });
-  }
+  btnPublish.addEventListener('click', async () => {
+    const text = (ta.value || '').trim();
+    if (!text) { ta.focus(); return; }
 
-  // ----- Envío (respeta tu backend que vuelve 201 o 4xx) -----
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideAlert();
+    btnPublish.disabled = true;
+    btnPublish.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Publicando...';
 
-    const value = (ta.value || '').trim();
-    if(!value){
-      ta.classList.add('is-invalid');
-      return;
-    }
-    ta.classList.remove('is-invalid');
-
-    publishBtn.disabled = true;
-    const oldHTML = publishBtn.innerHTML;
-    publishBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Publicando…';
-
-    try{
+    try {
       const r = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: value })
+        body: JSON.stringify({ content: text })
       });
+      const data = await r.json();
 
-      if(r.status === 422 || r.status === 400){
-        const data = await r.json().catch(()=>({}));
-        // Mostrar análisis y sugerencia si llegó desde backend
-        if (data.analysis){
-          lastModeration = data.analysis;
-          modBox.classList.remove('d-none');
-          modLabel.className = 'badge bg-danger text-uppercase';
-          modLabel.textContent = 'negative';
-          modScore.textContent = `score: ${data.analysis.score}`;
-          modMsg.textContent = 'El mensaje no puede publicarse con tono negativo.';
-          if (data.analysis.suggestion){
-            modSugWrap.classList.remove('d-none');
-            modSuggestion.textContent = data.analysis.suggestion;
-          }
-        }
-        throw new Error(data.reason || 'No se pudo publicar.');
+      if (r.status === 422 || r.status === 400) {
+        if (data.analysis) applyModUI(data.analysis);
+        showAlert('error', data.reason || 'No se puede publicar con tono negativo.');
+        return;
       }
+      if (!r.ok) throw new Error('Error al publicar.');
 
-      if(!r.ok) throw new Error('No se pudo publicar.');
-
-      showAlert('success', '¡Publicación creada con éxito!');
+      showAlert('success', '✅ ¡Publicación creada exitosamente!');
       ta.value = '';
-      updateCounter(); autoGrow(ta);
-      modBox.classList.add('d-none');
-      ta.classList.remove('is-valid','is-invalid');
-      publishBtn.disabled = false;
-
-      // recargar últimas publicaciones
+      updateChar();
+      clearMod();
       loadMyPosts();
-    }catch(err){
-      showAlert('danger', err.message || 'Error publicando.');
-    }finally{
-      publishBtn.innerHTML = oldHTML;
-      // Si la moderación lo marcó como negativo, mantenemos disabled;
-      // si no hay moderación negativa, habilitamos
-      if (!(lastModeration && lastModeration.label === 'negative')){
-        publishBtn.disabled = false;
-      }
+    } catch(e) {
+      showAlert('error', e.message || 'Error al publicar.');
+    } finally {
+      btnPublish.innerHTML = '<i class="bi bi-send-fill"></i> Publicar';
+      if (!(lastMod && lastMod.label === 'negative')) btnPublish.disabled = false;
     }
   });
 
-  // ----- Cargar últimas publicaciones del usuario -----
-  async function loadMyPosts(){
-    try{
-      const res = await fetch('/api/posts');
-      const items = await res.json();
-      const my = (items || []).filter(p => p.editable).slice(0,5);
-
-      if(!my.length){
-        myPostsEl.innerHTML = '<div class="muted">Aún no tienes publicaciones.</div>';
+  async function loadMyPosts() {
+    try {
+      const r = await fetch('/api/posts');
+      const items = await r.json();
+      const mine = (items || []).filter(p => p.editable).slice(0, 5);
+      if (!mine.length) {
+        myPosts.innerHTML = '<div class="post-empty">Aún no tienes publicaciones.</div>';
         return;
       }
-      myPostsEl.innerHTML = my.map(p => `
-        <div class="post-card mb-2">
-          <div class="d-flex justify-content-between">
-            <div>
-              <strong>${p.author || 'Tú'}</strong>
-              <span class="post-meta"> · ${new Date(p.created_at).toLocaleString()}</span>
-            </div>
-            <div class="post-actions">
-              <a class="text-decoration-none" href="{{ url_for('auth.dashboard') }}">
-                <i class="bi bi-chat-left-text me-1"></i>ver
-              </a>
-            </div>
+      const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+      myPosts.innerHTML = mine.map(p => `
+        <div class="post-item">
+          <div class="d-flex align-items-center">
+            <span class="post-author"><i class="bi bi-person-fill me-1"></i>${esc(p.author || 'Tú')}</span>
+            <span class="post-date">${new Date(p.created_at).toLocaleString('es-CO')}</span>
           </div>
-          <div class="mt-1 post-content">${(p.content || '').replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s]))}</div>
+          <div class="post-text">${esc(p.content).slice(0,200)}${p.content.length>200?'…':''}</div>
         </div>
       `).join('');
-    }catch(e){
-      myPostsEl.innerHTML = '<div class="text-danger">No se pudieron cargar tus publicaciones.</div>';
+    } catch(e) {
+      myPosts.innerHTML = '<div class="post-empty" style="color:#ef4444;">No se pudieron cargar las publicaciones.</div>';
     }
   }
 
+  updateChar();
   loadMyPosts();
 })();
 </script>
+</body>
+</html>
