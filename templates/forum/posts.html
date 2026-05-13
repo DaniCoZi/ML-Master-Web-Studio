@@ -1,86 +1,149 @@
-{% set page_title = "Master Web Studio | Publicaciones" %}
+{% set page_title = "Revelu | Publicaciones" %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page_title }}</title>
-
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/posts.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/forum-fixes.css') }}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-
-
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital@1&display=swap" rel="stylesheet">
 </head>
 <body>
+{% include "forum/_forum_header.html" %}
 
-  {% include "forum/_forum_header.html" %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #1a1a2e, #0f3460);
+    padding: 36px 0 30px;
+    color: #fff;
+  }
+  .page-hero h2 { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+  .page-hero p  { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0; }
+  .page-hero .btn-new { background: #e94560; color: #fff; border: none; border-radius: 20px; padding: 9px 22px; font-size: 0.88rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+  .page-hero .btn-new:hover { background: #c73652; color: #fff; transform: translateY(-1px); }
 
-  <div class="container">
-    <div class="navigate">
-      <span><a href="{{ url_for('auth.dashboard') }}">Comunidad</a> <i class="bi bi-chevron-right"></i> <a>Publicaciones</a></span>
-    </div>
+  .page-content { max-width: 900px; margin: 0 auto; padding: 32px 16px 60px; }
 
-    <div class="posts-table">
-      <div class="table-head">
-        <div class="status">Estado</div>
-        <div class="subjects">Temas</div>
-        <div class="replies">Respuestas/Vistas</div>
-        <div class="last-reply">Última actualización</div>
+  .posts-grid { display: flex; flex-direction: column; gap: 14px; }
+
+  .post-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: box-shadow 0.2s, transform 0.2s;
+    text-decoration: none;
+    color: inherit;
+    border-left: 4px solid transparent;
+  }
+  .post-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.1); transform: translateY(-1px); border-left-color: #e94560; }
+
+  .post-avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #0f3460, #e94560);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; font-weight: 700; flex-shrink: 0;
+  }
+  .post-body { flex: 1; min-width: 0; }
+  .post-content { font-size: 0.95rem; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .post-meta { display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: #9ca3af; flex-wrap: wrap; }
+  .post-author { color: #0f3460; font-weight: 600; }
+  .post-badge { background: #dbeafe; color: #1d4ed8; border-radius: 20px; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; }
+  .post-right { text-align: right; flex-shrink: 0; font-size: 0.8rem; color: #9ca3af; }
+  .post-arrow { color: #e94560; font-size: 1.1rem; margin-top: 4px; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: #9ca3af; }
+  .empty-state i { font-size: 3rem; margin-bottom: 12px; display: block; }
+  .empty-state p { font-size: 1rem; margin-bottom: 20px; }
+
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .toolbar-left { font-size: 0.9rem; color: #6b7280; }
+  .toolbar-left strong { color: #1a1a2e; }
+
+  .loading-skeleton { background: #fff; border-radius: 14px; padding: 20px 24px; margin-bottom: 14px; }
+  .skel { background: #f1f5f9; border-radius: 6px; animation: shimmer 1.5s infinite; }
+  @keyframes shimmer { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+</style>
+
+<div class="page-hero">
+  <div class="container d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:4px;">
+        <a href="{{ url_for('forum_pages.index') }}" style="color:rgba(255,255,255,0.5);text-decoration:none;">Comunidad</a> › Publicaciones
       </div>
-      <div id="rows"></div>
+      <h2><i class="bi bi-chat-dots-fill me-2" style="color:#e94560;"></i>Publicaciones</h2>
+      <p>Explora lo que comparte la comunidad</p>
     </div>
+    <a class="btn-new" href="{{ url_for('forum_pages.new_post_page') }}">
+      <i class="bi bi-plus-lg me-1"></i>Nueva publicación
+    </a>
+  </div>
+</div>
 
-    <div class="pagination" id="pager" style="display:none;"></div>
+<div class="page-content">
+  <div class="toolbar">
+    <div class="toolbar-left">Total: <strong id="postCount">cargando...</strong></div>
   </div>
 
-  <div class="note">
-    <span><i class="bi bi-emoji-frown"></i>&nbsp; Tema sin interacción</span>&nbsp;&nbsp;&nbsp;<a href="#"><i class="bi bi-share"></i></a><br>
-    <span><i class="bi bi-book"></i>&nbsp; Tema de baja interacción</span>&nbsp;&nbsp;&nbsp;<a href="#"><i class="bi bi-share"></i></a><br>
-    <span><i class="bi bi-fire"></i>&nbsp; Tema popular</span>&nbsp;&nbsp;&nbsp;<a href="#"><i class="bi bi-share"></i></a><br>
-    <span><i class="bi bi-rocket"></i>&nbsp; Tema de alta interacción</span>&nbsp;&nbsp;&nbsp;<a href="#"><i class="bi bi-share"></i></a><br>
-    <span><i class="bi bi-lock"></i>&nbsp; Tema cerrado</span>&nbsp;&nbsp;&nbsp;<a href="#"><i class="bi bi-share"></i></a><br>
+  <div id="postsGrid" class="posts-grid">
+    <div class="loading-skeleton">
+      <div class="skel" style="height:16px;width:60%;margin-bottom:8px;"></div>
+      <div class="skel" style="height:12px;width:40%;"></div>
+    </div>
+    <div class="loading-skeleton">
+      <div class="skel" style="height:16px;width:75%;margin-bottom:8px;"></div>
+      <div class="skel" style="height:12px;width:35%;"></div>
+    </div>
   </div>
+</div>
 
-  {% include "forum/_forum_footer.html" %}
+{% include "forum/_forum_footer.html" %}
 
-  <script>
-    (async ()=>{
-      const rows = document.getElementById('rows');
-      const esc = s => (s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-      try{
-        const r = await fetch('/api/posts');
-        const data = await r.json();
-        if(!Array.isArray(data) || !data.length){
-          rows.innerHTML = '<div class="table-row"><div class="subjects">No hay publicaciones aún.</div></div>';
-          return;
-        }
-        rows.innerHTML = data.map(p => {
-          const created = new Date(p.created_at).toLocaleString();
-          const href = "{{ url_for('auth.dashboard_detail', post_id=0) }}".replace('0', p.id);
-          return `
-            <div class="table-row">
-              <div class="status"><i class="bi bi-chat-dots"></i></div>
-              <div class="subjects">
-                <a href="${href}">${esc(p.content).slice(0,120)}${p.content.length>120?'…':''}</a>
-                <br><span>por ${esc(p.author || 'Usuario')}</span>
-              </div>
-              <div class="replies">—</div>
-              <div class="last-reply">${created}</div>
-            </div>`;
-        }).join('');
-      }catch(e){
-        rows.innerHTML = '<div class="table-row"><div class="subjects">Error cargando publicaciones.</div></div>';
-      }
-    })();
-  </script>
+<script>
+(async () => {
+  const grid = document.getElementById('postsGrid');
+  const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  try {
+    const r = await fetch('/api/posts');
+    const data = await r.json();
+    document.getElementById('postCount').textContent = (data||[]).length + ' publicaciones';
+    if (!Array.isArray(data) || !data.length) {
+      grid.innerHTML = `<div class="empty-state">
+        <i class="bi bi-chat-square-dots"></i>
+        <p>Aún no hay publicaciones. ¡Sé el primero!</p>
+        <a href="{{ url_for('forum_pages.new_post_page') }}" style="background:#e94560;color:#fff;border-radius:20px;padding:10px 24px;text-decoration:none;font-weight:600;">
+          <i class="bi bi-plus-lg me-1"></i>Crear publicación
+        </a>
+      </div>`;
+      return;
+    }
+    const detailBase = "{{ url_for('auth.dashboard_detail', post_id=0) }}".replace('0', '__ID__');
+    grid.innerHTML = data.map(p => {
+      const initial = (p.author||'U')[0].toUpperCase();
+      const href = detailBase.replace('__ID__', p.id);
+      const date = new Date(p.created_at).toLocaleDateString('es-CO', {day:'numeric',month:'short',year:'numeric'});
+      const time = new Date(p.created_at).toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'});
+      return `<a class="post-card" href="${href}">
+        <div class="post-avatar">${initial}</div>
+        <div class="post-body">
+          <div class="post-content">${esc(p.content)}</div>
+          <div class="post-meta">
+            <span class="post-author"><i class="bi bi-person-fill me-1"></i>${esc(p.author||'Usuario')}</span>
+            <span class="post-badge"><i class="bi bi-chat me-1"></i>Foro General</span>
+            <span><i class="bi bi-clock me-1"></i>${date} · ${time}</span>
+          </div>
+        </div>
+        <div class="post-right">
+          <i class="bi bi-chevron-right post-arrow"></i>
+        </div>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle" style="color:#ef4444;"></i><p>Error cargando publicaciones.</p></div>';
+  }
+})();
+</script>
 </body>
 </html>
