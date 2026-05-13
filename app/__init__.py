@@ -78,31 +78,6 @@ def create_app():
         for rule in app.url_map.iter_rules():
             print(rule.endpoint, "->", rule)
 
-    #------------------------------------------------------------------ - Rutas de administración (solo para desarrollo, no en producción) --- 
-
-    @app.get("/initdb")
-    def initdb():
-        try:
-            db.create_all()
-            return "Tablas creadas OK", 200
-        except Exception as e:
-            return f"Error: {e}", 500
-    
-
-    @app.get("/createadmin")
-    def createadmin():
-        try:
-            from app.models.user import User
-            existing = User.query.filter_by(email="admin@revelu.com").first()
-            if existing:
-                return "Usuario ya existe", 200
-            hashed = bcrypt.generate_password_hash("Admin2024!").decode("utf-8")
-            user = User(email="admin@revelu.com", password=hashed, nombre="Admin")
-            db.session.add(user)
-            db.session.commit()
-            return "Usuario creado: admin@revelu.com / Admin2024!", 200
-        except Exception as e:
-            return f"Error: {e}", 500
 
 
     return app
