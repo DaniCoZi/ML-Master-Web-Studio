@@ -79,4 +79,13 @@ def create_app():
             print(rule.endpoint, "->", rule)
 
 
+    @app.get("/initdb")
+    def initdb():
+        try:
+            db.create_all()
+            return "Tablas creadas OK", 200
+        except Exception as e:
+            return f"Error: {e}", 500
+
+
     return app
