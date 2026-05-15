@@ -7,7 +7,7 @@ import joblib
 
 logger = logging.getLogger(__name__)
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "moderator_model.pkl")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "ml", "moderator_model.pkl")
 
 _model = None
 

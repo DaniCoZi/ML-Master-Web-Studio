@@ -1,0 +1,441 @@
+{% set page_title = "Revelu | Nueva publicación" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background: #f0f4f8; font-family: 'Inter', sans-serif; }
+
+    .page-wrapper { max-width: 800px; margin: 0 auto; padding: 32px 16px 60px; }
+
+    .breadcrumb-bar { font-size: 0.85rem; color: #6c757d; margin-bottom: 20px; }
+    .breadcrumb-bar a { color: #0f3460; text-decoration: none; }
+    .breadcrumb-bar a:hover { text-decoration: underline; }
+
+    .card-post {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .card-header-post {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header-post h3 { color: #fff; margin: 0; font-size: 1.15rem; font-weight: 600; }
+    .btn-back { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 18px; font-size: 0.85rem; text-decoration: none; transition: all 0.2s; }
+    .btn-back:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+    .card-body-post { padding: 28px; }
+
+    .alert-area { margin-bottom: 16px; border-radius: 10px; padding: 12px 16px; font-size: 0.9rem; display: none; }
+    .alert-success-custom { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+    .alert-danger-custom  { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+
+    .form-label-custom { font-weight: 600; color: #1a1a2e; font-size: 0.9rem; margin-bottom: 8px; display: block; }
+    
+    .textarea-mod {
+      width: 100%;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      resize: vertical;
+      min-height: 140px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      color: #1a1a2e;
+    }
+    .textarea-mod:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15,52,96,0.1); }
+    .textarea-mod.is-negative { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+    .textarea-mod.is-positive { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+    .textarea-mod.is-neutral  { border-color: #6b7280; box-shadow: 0 0 0 3px rgba(107,114,128,0.1); }
+
+    .char-counter { font-size: 0.8rem; color: #9ca3af; text-align: right; margin-top: 6px; }
+
+    /* Caja de moderación */
+    .mod-box {
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 14px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+    .mod-box.mod-negative { background: #fef2f2; border: 1px solid #fca5a5; }
+    .mod-box.mod-positive { background: #f0fdf4; border: 1px solid #86efac; }
+    .mod-box.mod-neutral  { background: #f8fafc; border: 1px solid #cbd5e1; }
+
+    .mod-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .mod-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-negative { background: #ef4444; color: #fff; }
+    .badge-positive { background: #10b981; color: #fff; }
+    .badge-neutral  { background: #6b7280; color: #fff; }
+    .mod-score { font-size: 0.8rem; color: #6b7280; }
+    .mod-msg { font-size: 0.88rem; color: #374151; }
+
+    .suggestion-box {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      font-size: 0.88rem;
+      color: #374151;
+      line-height: 1.6;
+    }
+    .suggestion-label { font-size: 0.78rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .btn-use-suggestion {
+      margin-top: 10px;
+      background: #0f3460;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-use-suggestion:hover { background: #1a1a2e; }
+
+    .actions-bar { display: flex; gap: 12px; margin-top: 20px; }
+    .btn-publish {
+      background: linear-gradient(135deg, #0f3460, #e94560);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-publish:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(233,69,96,0.35); }
+    .btn-publish:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-clear {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 11px 22px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clear:hover { background: #e2e8f0; }
+
+    /* Últimas publicaciones */
+    .card-myposts {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+      margin-top: 24px;
+      overflow: hidden;
+    }
+    .card-myposts-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px 24px;
+      font-weight: 600;
+      color: #1a1a2e;
+      font-size: 0.95rem;
+    }
+    .card-myposts-body { padding: 16px 24px; }
+    .post-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: box-shadow 0.2s;
+    }
+    .post-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .post-item:last-child { margin-bottom: 0; }
+    .post-author { font-weight: 600; font-size: 0.88rem; color: #0f3460; }
+    .post-date { font-size: 0.8rem; color: #9ca3af; margin-left: 8px; }
+    .post-text { font-size: 0.9rem; color: #374151; margin-top: 6px; line-height: 1.5; }
+    .post-empty { color: #9ca3af; font-size: 0.9rem; text-align: center; padding: 20px 0; }
+
+    /* Indicador de análisis en progreso */
+    .analyzing-indicator {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    .analyzing-indicator.show { display: flex; }
+    .dot-pulse { width: 6px; height: 6px; border-radius: 50%; background: #6b7280; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+  </style>
+</head>
+<body>
+
+{% include "forum/_forum_header.html" %}
+
+<div class="page-wrapper">
+
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb-bar">
+    <a href="{{ url_for('main.index') }}">Inicio</a> &rsaquo;
+    <a href="{{ url_for('forum_pages.index') }}">Comunidad</a> &rsaquo;
+    Nueva publicación
+  </div>
+
+  <!-- TARJETA PRINCIPAL -->
+  <div class="card-post">
+    <div class="card-header-post">
+      <h3><i class="bi bi-pencil-square me-2"></i>Crear nueva publicación</h3>
+      <a class="btn-back" href="{{ url_for('forum_pages.index') }}">&#8592; Volver</a>
+    </div>
+    <div class="card-body-post">
+
+      <div id="alertArea" class="alert-area"></div>
+
+      <label class="form-label-custom" for="content">¿Qué quieres compartir con la comunidad?</label>
+
+      <textarea id="content" class="textarea-mod" rows="6" maxlength="2000"
+        placeholder="Escribe tu publicación aquí... Recuerda mantener un tono respetuoso y constructivo."></textarea>
+
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <div class="analyzing-indicator" id="analyzingIndicator">
+          <div class="dot-pulse"></div>
+          <span>Analizando contenido...</span>
+        </div>
+        <div></div>
+        <div class="char-counter"><span id="charCount">0</span> / 2000</div>
+      </div>
+
+      <!-- Caja de moderación -->
+      <div id="modBox" class="mod-box">
+        <div class="mod-header">
+          <span id="modBadge" class="mod-badge"></span>
+          <span id="modScore" class="mod-score"></span>
+        </div>
+        <div id="modMsg" class="mod-msg"></div>
+        <div id="suggestionWrap" style="display:none;">
+          <div class="suggestion-box">
+            <div class="suggestion-label"><i class="bi bi-lightbulb me-1"></i>Sugerencia de mejora</div>
+            <div id="suggestionText"></div>
+          </div>
+          <button class="btn-use-suggestion" id="btnUseSuggestion">
+            <i class="bi bi-arrow-up-circle me-1"></i>Usar esta sugerencia
+          </button>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <button id="btnPublish" class="btn-publish" type="button">
+          <i class="bi bi-send-fill"></i> Publicar
+        </button>
+        <button id="btnClear" class="btn-clear" type="button">
+          <i class="bi bi-x-circle me-1"></i>Limpiar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ÚLTIMAS PUBLICACIONES -->
+  <div class="card-myposts">
+    <div class="card-myposts-header"><i class="bi bi-clock-history me-2"></i>Tus últimas publicaciones</div>
+    <div class="card-myposts-body" id="myPosts">
+      <div class="post-empty">Cargando...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const ta          = document.getElementById('content');
+  const charCount   = document.getElementById('charCount');
+  const alertArea   = document.getElementById('alertArea');
+  const modBox      = document.getElementById('modBox');
+  const modBadge    = document.getElementById('modBadge');
+  const modScore    = document.getElementById('modScore');
+  const modMsg      = document.getElementById('modMsg');
+  const sugWrap     = document.getElementById('suggestionWrap');
+  const sugText     = document.getElementById('suggestionText');
+  const btnUse      = document.getElementById('btnUseSuggestion');
+  const btnPublish  = document.getElementById('btnPublish');
+  const btnClear    = document.getElementById('btnClear');
+  const analyzing   = document.getElementById('analyzingIndicator');
+  const myPosts     = document.getElementById('myPosts');
+
+  let lastMod = null;
+
+  function showAlert(type, msg) {
+    alertArea.className = 'alert-area ' + (type === 'success' ? 'alert-success-custom' : 'alert-danger-custom');
+    alertArea.textContent = msg;
+    alertArea.style.display = 'block';
+    if (type === 'success') setTimeout(() => { alertArea.style.display = 'none'; }, 4000);
+  }
+
+  function updateChar() {
+    charCount.textContent = (ta.value || '').length;
+  }
+
+  function applyModUI(data) {
+    lastMod = data;
+    const cfg = {
+      negative: { box: 'mod-negative', badge: 'badge-negative', icon: 'bi-exclamation-triangle-fill', label: 'NEGATIVO', msg: '⚠️ Tu mensaje tiene un tono negativo. Corrígelo para poder publicar.' },
+      positive: { box: 'mod-positive', badge: 'badge-positive', icon: 'bi-hand-thumbs-up-fill',        label: 'POSITIVO', msg: '✅ ¡Excelente tono! Tu mensaje es positivo y constructivo.' },
+      neutral:  { box: 'mod-neutral',  badge: 'badge-neutral',  icon: 'bi-dash-circle-fill',           label: 'NEUTRAL',  msg: '💬 Mensaje neutro. Puedes publicarlo.' },
+    };
+    const c = cfg[data.label] || cfg.neutral;
+
+    modBox.className = 'mod-box ' + c.box;
+    modBox.style.display = 'block';
+    modBadge.className = 'mod-badge ' + c.badge;
+    modBadge.innerHTML = `<i class="bi ${c.icon}"></i>${c.label}`;
+    modScore.textContent = `confianza: ${Math.round(data.score * 100)}%`;
+    modMsg.textContent = c.msg;
+
+    ta.className = 'textarea-mod ' + (data.label === 'negative' ? 'is-negative' : data.label === 'positive' ? 'is-positive' : 'is-neutral');
+
+    if (data.label === 'negative' && data.suggestion) {
+      sugWrap.style.display = 'block';
+      sugText.textContent = data.suggestion;
+    } else {
+      sugWrap.style.display = 'none';
+    }
+
+    btnPublish.disabled = (data.label === 'negative');
+  }
+
+  function clearMod() {
+    modBox.style.display = 'none';
+    ta.className = 'textarea-mod';
+    btnPublish.disabled = false;
+    lastMod = null;
+  }
+
+  function debounce(fn, ms) {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  }
+
+  async function moderate(text) {
+    if (!text.trim()) { clearMod(); return; }
+    analyzing.classList.add('show');
+    try {
+      const r = await fetch('/api/moderate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: text })
+      });
+      const data = await r.json();
+      applyModUI(data);
+    } catch(e) {
+      clearMod();
+    } finally {
+      analyzing.classList.remove('show');
+    }
+  }
+
+  const debouncedModerate = debounce(text => moderate(text), 400);
+
+  ta.addEventListener('input', () => {
+    updateChar();
+    if (!ta.value.trim()) { clearMod(); return; }
+    debouncedModerate(ta.value);
+  });
+
+  btnUse.addEventListener('click', () => {
+    if (lastMod && lastMod.suggestion) {
+      ta.value = lastMod.suggestion;
+      updateChar();
+      moderate(ta.value);
+      ta.focus();
+    }
+  });
+
+  btnClear.addEventListener('click', () => {
+    ta.value = '';
+    updateChar();
+    clearMod();
+    alertArea.style.display = 'none';
+    ta.focus();
+  });
+
+  btnPublish.addEventListener('click', async () => {
+    const text = (ta.value || '').trim();
+    if (!text) { ta.focus(); return; }
+
+    btnPublish.disabled = true;
+    btnPublish.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Publicando...';
+
+    try {
+      const r = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: text })
+      });
+      const data = await r.json();
+
+      if (r.status === 422 || r.status === 400) {
+        if (data.analysis) applyModUI(data.analysis);
+        showAlert('error', data.reason || 'No se puede publicar con tono negativo.');
+        return;
+      }
+      if (!r.ok) throw new Error('Error al publicar.');
+
+      showAlert('success', '✅ ¡Publicación creada exitosamente!');
+      ta.value = '';
+      updateChar();
+      clearMod();
+      loadMyPosts();
+    } catch(e) {
+      showAlert('error', e.message || 'Error al publicar.');
+    } finally {
+      btnPublish.innerHTML = '<i class="bi bi-send-fill"></i> Publicar';
+      if (!(lastMod && lastMod.label === 'negative')) btnPublish.disabled = false;
+    }
+  });
+
+  async function loadMyPosts() {
+    try {
+      const r = await fetch('/api/posts');
+      const items = await r.json();
+      const mine = (items || []).filter(p => p.editable).slice(0, 5);
+      if (!mine.length) {
+        myPosts.innerHTML = '<div class="post-empty">Aún no tienes publicaciones.</div>';
+        return;
+      }
+      const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+      myPosts.innerHTML = mine.map(p => `
+        <div class="post-item">
+          <div class="d-flex align-items-center">
+            <span class="post-author"><i class="bi bi-person-fill me-1"></i>${esc(p.author || 'Tú')}</span>
+            <span class="post-date">${new Date(p.created_at).toLocaleString('es-CO')}</span>
+          </div>
+          <div class="post-text">${esc(p.content).slice(0,200)}${p.content.length>200?'…':''}</div>
+        </div>
+      `).join('');
+    } catch(e) {
+      myPosts.innerHTML = '<div class="post-empty" style="color:#ef4444;">No se pudieron cargar las publicaciones.</div>';
+    }
+  }
+
+  updateChar();
+  loadMyPosts();
+})();
+</script>
+</body>
+</html>
