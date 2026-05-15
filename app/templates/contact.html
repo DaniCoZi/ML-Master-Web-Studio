@@ -203,6 +203,63 @@
         <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 
         
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const btn  = form.querySelector('button');
+
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const name    = (document.getElementById('name').value    || '').trim();
+                const email   = (document.getElementById('email').value   || '').trim();
+                const subject = (document.getElementById('subject').value || '').trim();
+                const message = (document.getElementById('message').value || '').trim();
+
+                if (!name || !email || !subject || !message) {
+                    showAlert('Por favor completa nombre, correo, asunto y mensaje.', 'danger');
+                    return;
+                }
+                btn.disabled = true;
+                btn.textContent = 'Enviando...';
+                try {
+                    const res = await fetch('/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, subject, message })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        showAlert('✅ Mensaje enviado. Te responderemos pronto.', 'success');
+                        form.reset();
+                    } else {
+                        showAlert('❌ ' + (data.error || 'Error al enviar.'), 'danger');
+                    }
+                } catch(err) {
+                    showAlert('❌ Error de conexión. Intenta de nuevo.', 'danger');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Enviar';
+                }
+            });
+
+            function showAlert(msg, type) {
+                let el = document.getElementById('contact-alert');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'contact-alert';
+                    el.style.cssText = 'margin-top:14px;padding:12px 16px;border-radius:8px;font-size:0.9rem;font-weight:500;';
+                    form.after(el);
+                }
+                el.style.background = type === 'success' ? '#d1fae5' : '#fee2e2';
+                el.style.color      = type === 'success' ? '#065f46' : '#991b1b';
+                el.style.border     = type === 'success' ? '1px solid #6ee7b7' : '1px solid #fca5a5';
+                el.textContent = msg;
+                if (type === 'success') setTimeout(() => el.remove(), 5000);
+            }
+        });
+        </script>
+
     </body>
 
 </html>
