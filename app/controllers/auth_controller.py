@@ -84,6 +84,8 @@ def dashboard_detail(post_id):
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    from flask import session
+    session.clear()
     logout_user()
     flash('Has cerrado sesión', 'info')
     return redirect(url_for('auth.login_page'))
