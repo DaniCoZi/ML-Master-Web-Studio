@@ -1,5 +1,5 @@
 # app/controllers/main_controller.py
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify
 
 main_controller = Blueprint('main', __name__)
 
@@ -11,8 +11,25 @@ def index():
 def about():
     return render_template('about.html')
 
-@main_controller.route('/contact')
+@main_controller.route('/contact', methods=['GET', 'POST'])
 def contact():
+    if request.method == 'POST':
+        from app.services.email import send_contact_email
+        data = request.get_json(silent=True) or {}
+        name    = (data.get('name')    or request.form.get('name')    or '').strip()
+        email   = (data.get('email')   or request.form.get('email')   or '').strip()
+        subject = (data.get('subject') or request.form.get('subject') or '').strip()
+        message = (data.get('message') or request.form.get('message') or '').strip()
+
+        if not all([name, email, subject, message]):
+            return jsonify({"ok": False, "error": "Todos los campos son obligatorios."}), 400
+
+        success = send_contact_email(name, email, subject, message)
+        if success:
+            return jsonify({"ok": True, "message": "¡Mensaje enviado! Te responderemos pronto."}), 200
+        else:
+            return jsonify({"ok": False, "error": "Error al enviar el mensaje. Intenta de nuevo."}), 500
+
     return render_template('contact.html')
 
 @main_controller.route('/services')
@@ -35,7 +52,6 @@ def testimonial():
 def faq():
     return render_template('FAQ.html')
 
-
 @main_controller.route('/feature')
 def feature():
     return render_template('feature.html')
@@ -47,32 +63,3 @@ def error404():
 @main_controller.route('/login2')
 def login2():
     return render_template('login2.html')
-
-#_____________________________________________________________________________
-"""
-# main_controller.py
-from flask import Blueprint, render_template
-from .dashboard_menu_config import DASHBOARD_MENU  # Importa el archivo de configuración
-
-main_controller = Blueprint('dashboard', __name__)
-
-@main_controller.route('/dashboard')
-def index():
-    return render_template('dashboard.html', dashboard_menu=DASHBOARD_MENU)
-
-@main_controller.route('/profile')
-def profile():
-    return render_template('profile.html', dashboard_menu=DASHBOARD_MENU)
-
-@main_controller.route('/settings')
-def settings():
-    return render_template('settings.html', dashboard_menu=DASHBOARD_MENU)
-
-@main_controller.route('/reports')
-def reports():
-    return render_template('reports.html', dashboard_menu=DASHBOARD_MENU)
-
-@main_controller.route('/test')
-def test():
-    return "¡Ruta de prueba exitosa!"
-"""
