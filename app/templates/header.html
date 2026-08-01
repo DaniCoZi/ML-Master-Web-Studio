@@ -1,5 +1,13 @@
 <!-- /header.html -->
 
+<script>
+(function () {
+  var stored = localStorage.getItem('theme');
+  var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+
 <!-- Topbar Start -->
 <div class="container-fluid topbar px-0 px-lg-4 bg-light py-2 d-none d-lg-block">
   <div class="container">
@@ -74,6 +82,9 @@
           <a href="{{ url_for('main.contact') }}" class="nav-item nav-link">Contacto</a>
 
           <div class="nav-btn px-3">
+            <button id="themeToggle" class="theme-toggle-btn btn btn-md-square rounded-circle flex-shrink-0 me-2" type="button" title="Cambiar tema" aria-label="Cambiar a modo nocturno">
+              <i class="fas fa-moon" id="themeToggleIcon"></i>
+            </button>
             <button class="btn-search btn btn-primary btn-md-square rounded-circle flex-shrink-0" data-bs-toggle="modal" data-bs-target="#searchModal">
               <i class="fas fa-search"></i>
             </button>

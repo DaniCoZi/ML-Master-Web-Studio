@@ -1463,3 +1463,136 @@ li:hover{
   margin-bottom: 2px;
 }
 /* === Header compacto FIN === */
+
+
+/*** Dark Mode Start ***/
+:root {
+    --dm-bg: #ffffff;
+    --dm-surface: #ffffff;
+    --dm-surface-alt: #F2F5F9;
+    --dm-text: #787878;
+    --dm-text-strong: #16243D;
+    --dm-border: rgba(0, 0, 0, .08);
+}
+
+html[data-theme="dark"] {
+    --dm-bg: #12181f;
+    --dm-surface: #1b232c;
+    --dm-surface-alt: #202a34;
+    --dm-text: #c3cad1;
+    --dm-text-strong: #f5f7fa;
+    --dm-border: rgba(255, 255, 255, .08);
+
+    /* --bs-light is only ever used as a background in this codebase (never
+       as text color), so redefining it here safely darkens every .bg-light
+       utility and every custom rule that uses var(--bs-light) as background:
+       topbar, dropdown menus, navbar-nav pill, feature/service icons,
+       accordion collapsed state, testimonial/counter items, service and
+       blog content panels, etc. */
+    --bs-light: var(--dm-surface-alt);
+}
+
+html[data-theme="dark"] body {
+    background-color: var(--dm-bg);
+    color: var(--dm-text);
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] .text-dark {
+    color: var(--dm-text-strong) !important;
+}
+
+/* --bs-white is also used as *text* color on colored backgrounds (buttons,
+   footer, primary-tinted cards), so it can't be redefined globally without
+   breaking that contrast. Instead, target the specific surfaces/utility
+   classes that use it as a background. */
+html[data-theme="dark"] .nav-bar,
+html[data-theme="dark"] .feature .feature-item,
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .modal-content {
+    background-color: var(--dm-surface) !important;
+}
+
+/* Bootstrap's own .bg-light/.bg-white utilities are hardcoded hex in this
+   version (not var()-based), so the --bs-light redefinition above doesn't
+   reach them — override the utility classes directly. */
+html[data-theme="dark"] .bg-light {
+    background-color: var(--dm-surface-alt) !important;
+}
+
+html[data-theme="dark"] .navbar-light .navbar-nav .nav-item .nav-link,
+html[data-theme="dark"] .feature .feature-item h4,
+html[data-theme="dark"] .feature .feature-item p,
+html[data-theme="dark"] .service .service-content .h4,
+html[data-theme="dark"] .service .service-content p,
+html[data-theme="dark"] .blog .blog-content .h4,
+html[data-theme="dark"] .blog .blog-content p {
+    color: var(--dm-text);
+}
+
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select {
+    background-color: var(--dm-surface-alt);
+    color: var(--dm-text-strong);
+    border-color: var(--dm-border);
+}
+
+html[data-theme="dark"] .form-control::placeholder {
+    color: var(--dm-text);
+}
+
+/* El formulario de contacto usa el "form-floating" nativo de Bootstrap
+   (placeholder en inglés + <label> en español superpuestos, oculto vía
+   color:transparent en el placeholder). La regla genérica de arriba lo
+   reactivaba sin querer; se restaura la transparencia solo para este
+   componente y se ajusta el color del label para que se lea sobre fondo
+   oscuro. */
+html[data-theme="dark"] .form-floating > .form-control::placeholder {
+    color: transparent;
+}
+
+html[data-theme="dark"] .form-floating > label {
+    color: var(--dm-text);
+}
+
+html[data-theme="dark"] .accordion-item {
+    background-color: var(--dm-surface);
+    border-color: var(--dm-border);
+}
+
+html[data-theme="dark"] .accordion-body {
+    color: var(--dm-text);
+}
+
+html[data-theme="dark"] .dropdown-menu {
+    background-color: var(--dm-surface-alt);
+    border-color: var(--dm-border);
+}
+
+html[data-theme="dark"] .dropdown-item {
+    color: var(--dm-text);
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .login-card {
+    background-color: var(--dm-surface);
+    color: var(--dm-text);
+}
+
+/* Botón de cambio de tema */
+.theme-toggle-btn {
+    border: 1px solid var(--bs-primary);
+    color: var(--bs-primary);
+    background: transparent;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--bs-primary);
+    color: var(--bs-white);
+}
+/*** Dark Mode End ***/
